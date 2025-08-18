@@ -42,18 +42,4 @@ export const authService = {
             };
         }
     },
-
-    // validateToken: async (token) => {
-    //     try {
-    //         const response = await fetch(API_ENDPOINTS.ADMIN_LOGIN, {
-    //             method: 'GET',
-    //             headers: getHeaders(token)
-    //         });
-
-    //         return response.ok;
-    //     } catch (error) {
-    //         console.error('Validate token error:', error);
-    //         return false;
-    //     }
-    // }
 }; 

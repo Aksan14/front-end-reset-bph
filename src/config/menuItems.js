@@ -1,11 +1,12 @@
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import PaymentsIcon from '@mui/icons-material/Payments'
-import ReceiptIcon from '@mui/icons-material/Receipt'
-import AssessmentIcon from '@mui/icons-material/Assessment'
+import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn'
+import ReportProblemIcon from '@mui/icons-material/ReportProblem' 
 
 export const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Pemasukan', icon: <PaymentsIcon />, path: '/pemasukan' },
-  { text: 'Pengeluaran', icon: <ReceiptIcon />, path: '/pengeluaran' },
-  { text: 'Laporan Keuangan', icon: <AssessmentIcon />, path: '/laporan' },
+  { text: 'Barang', icon: <PaymentsIcon />, path: '/barang' },
+  { text: 'Halaman Peminjaman', icon: <AssignmentReturnIcon />, path: '/halaman-peminjaman' },
+  { text: 'Cek Bulanan', icon: <ReportProblemIcon />, path: '/cek-bulanan' },
+  // { text: 'Report', icon: <ReportProblemIcon />, path: '/report' },
 ]

@@ -19,7 +19,7 @@ export default function DashboardFooter({ darkMode }) {
                     <Grid item xs={12} sm={6}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                             <Typography variant="body2" color={darkMode ? '#fff' : 'text.secondary'}>
-                                © {new Date().getFullYear()} Sistem Informasi Bendahara
+                                © {new Date().getFullYear()} Sistem Informasi Inventaris Barang
                             </Typography>
                             <Link
                                 href="https://coconut.or.id"

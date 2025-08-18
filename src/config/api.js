@@ -1,63 +1,39 @@
-export const NGROK_URL = 'https://joyful-analysis-production.up.railway.app';
-export const API_BASE_URL = `${NGROK_URL}/api`;
-export const UPLOAD_URL = `${API_BASE_URL}/uploads/`;
+// src/config/api.js
+export const API_BASE_URL = "http://localhost:8080/";
 
-export const API_ENDPOINTS = {
-    // Admin endpoints
-    ADMIN: `${API_BASE_URL}/admin`,
-    ADMIN_LOGIN: `${API_BASE_URL}/admin/login`,
-    ADMIN_REGISTER: `${API_BASE_URL}/admin/daftar`,
-    ADMIN_BY_NIK: (nik) => `${API_BASE_URL}/admin/${nik}`,
-    
-    // Pemasukan endpoints
-    PEMASUKAN_ADD: `${API_BASE_URL}/pemasukan/add`,
-    PEMASUKAN_UPDATE: (id) => `${API_BASE_URL}/pemasukan/update/${id}`,
-    PEMASUKAN_GET_ALL: `${API_BASE_URL}/pemasukan/getall`,
-    PEMASUKAN_GET_BY_ID: (id) => `${API_BASE_URL}/pemasukan/get/${id}`,
-    PEMASUKAN_DELETE: (id) => `${API_BASE_URL}/pemasukan/delete/${id}`,
-    
-    // Pengeluaran endpoints
-    PENGELUARAN_ADD: `${API_BASE_URL}/pengeluaran/add`,
-    PENGELUARAN_UPDATE: (id) => `${API_BASE_URL}/pengeluaran/update/${id}`,
-    PENGELUARAN_GET_ALL: `${API_BASE_URL}/pengeluaran/getall`,
-    PENGELUARAN_GET_BY_ID: (id) => `${API_BASE_URL}/pengeluaran/get/${id}`,
-    PENGELUARAN_DELETE: (id) => `${API_BASE_URL}/pengeluaran/delete/${id}`,
-    
-    // Transaksi endpoints
-    TRANSAKSI_GET_ALL: `${API_BASE_URL}/transaksi/getall`,
-    TRANSAKSI_GET_LAST: `${API_BASE_URL}/transaksi/getlast`,
-    
-    // Laporan endpoints
-    LAPORAN_GET_ALL: `${API_BASE_URL}/laporan/getall`,
-    LAPORAN_GET_SALDO: `${API_BASE_URL}/laporan/saldo`,
-    LAPORAN_GET_PENGELUARAN: `${API_BASE_URL}/laporan/pengeluaran`,
-    LAPORAN_GET_PEMASUKAN: `${API_BASE_URL}/laporan/pemasukan`,
-    LAPORAN_DELETE: (id) => `${API_BASE_URL}/laporan/delete/${id}`,
+export const endpoints = {
+  // Admin endpoints
+  ADMIN_LOGIN: `${API_BASE_URL}api/user/login`,
+  ADMIN_UPDATE: `${API_BASE_URL}api/user/changepassword`,
 
-    // Iuran endpoints
-    IURAN_ADD: `${API_BASE_URL}/iuran/add`,
-    IURAN_UPDATE: `${API_BASE_URL}/iuran/update`,
-    IURAN_GET_ALL: `${API_BASE_URL}/iuran/all`,
-    IURAN_DELETE: (id) => `${API_BASE_URL}/iuran/delete/${id}`,
+  // Barang / Inventaris endpoints
+  BARANG_GET_ALL: `${API_BASE_URL}api/inventaris/get`,
+  BARANG_ADD: `${API_BASE_URL}api/inventaris/add`,
+  BARANG_UPDATE: (id) => `${API_BASE_URL}api/inventaris/update/${id}`,
+  BARANG_GET_BY_ID: (id) => `${API_BASE_URL}api/inventaris/getbyid/${id}`,
+  BARANG_DELETE: (id) => `${API_BASE_URL}api/inventaris/delete/${id}`,
 
-    // Sumbangan endpoints
-    SUMBANGAN_ADD: `${API_BASE_URL}/sumbangan/add`,
-    SUMBANGAN_UPDATE: `${API_BASE_URL}/sumbangan/update`,
-    SUMBANGAN_GET_ALL: `${API_BASE_URL}/sumbangan/all`,
-    SUMBANGAN_IMAGE: (filename) => `${API_BASE_URL}/image/sumbangan/${filename}`,
-    SUMBANGAN_DELETE: (id) => `${API_BASE_URL}/sumbangan/delete/${id}`,
+  // Peminjaman endpoints
+  BARANG_TERSEDIA: `${API_BASE_URL}api/barang/tersedia`,
+  PEMINJAMAN_ADD: `${API_BASE_URL}api/peminjaman`,
+  PEMINJAMAN_KEMBALI: (id) => `${API_BASE_URL}api/peminjaman/kembali/${id}`, // PUT /api/peminjaman/kembali/:id
+  PEMINJAMAN_LIST: `${API_BASE_URL}api/peminjaman`,             // GET /api/peminjaman
+  BARANG_SEARCH: (q) => `${API_BASE_URL}api/inventaris/search?query=${encodeURIComponent(q)}`, // pencaharian barang
+
+  // Statistik endpoints
+  STATS_BARANG_ALL: `${API_BASE_URL}api/stats/barang`,
+  STATS_BARANG_DIPINJAM: `${API_BASE_URL}api/stats/barang/dipinjam`,
+  STATS_BARANG_RUSAKBERAT: `${API_BASE_URL}api/stats/barang/rusakberat`,
+
+  // Report endpoints
+  REPORT_START: `${API_BASE_URL}api/report/start`,
+  REPORT_GET_ALL: `${API_BASE_URL}api/report`,
+  REPORT_DETAIL: (id) => `${API_BASE_URL}api/report/detail/${id}`,
+  REPORT_FINALIZE: (id) => `${API_BASE_URL}api/report/finalize/${id}`,
+  REPORT_EXPORT: (id) => `${API_BASE_URL}api/report/export/${id}`,
+
+  // Check endpoints
+  CHECK_ADD: (id) => `${API_BASE_URL}api/check/${id}/add`,
+  CHECK_UPDATE: (id) => `${API_BASE_URL}api/check/update/${id}`,
+  CHECK_DELETE: (id) => `${API_BASE_URL}api/check/delete/${id}`,
 };
-
-// export const getHeaders = (token = null) => {
-//     const headers = {
-//         'Content-Type': 'application/json',
-//         'Accept': 'application/json',
-//         'ngrok-skip-browser-warning': 'true'
-//     };
-
-//     if (token) {
-//         headers['Authorization'] = `Bearer ${token}`;
-//     }
-
-//     return headers;
-// }; 

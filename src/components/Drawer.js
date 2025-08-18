@@ -1,79 +1,159 @@
 'use client'
-import { Drawer, Box, Toolbar, Typography, List } from '@mui/material'
-import Image from 'next/image'
-import MenuItems from './MenuItems'
-import { useSoftUIController } from '@/context'
+import { 
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Typography,
+  Button,
+  useTheme,
+  useMediaQuery 
+} from '@mui/material';
+import { useRouter, usePathname } from 'next/navigation';
+import LogoutIcon from '@mui/icons-material/Logout';
+import Image from 'next/image';
+import { menuItems } from '@/config/menuItems';
 
-export default function DashboardDrawer({ darkMode, miniSidenav }) {
-  const [controller, dispatch] = useSoftUIController()
+export default function DashboardDrawer({ open, onClose, variant }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  return (
-    <>
-      {/* Mobile Drawer */}
-      <Drawer
-        variant="temporary"
-        open={miniSidenav}
-        onClose={() => setMiniSidenav(dispatch, false)}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': {
-            bgcolor: darkMode ? '#1a1a1a' : 'white',
-            color: darkMode ? '#fff' : 'inherit',
-            transition: 'background-color 0.3s, color 0.3s',
-          },
-        }}
-      >
-        <DrawerContent darkMode={darkMode} />
-      </Drawer>
+  const handleLogout = () => {
+    router.push('/login');
+  };
 
-      {/* Desktop Drawer */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': {
-            bgcolor: darkMode ? '#1a1a1a' : 'white',
-            color: darkMode ? '#fff' : 'inherit',
-            transition: 'background-color 0.3s, color 0.3s',
-          },
-        }}
-        open
-      >
-        <DrawerContent darkMode={darkMode} miniSidenav={miniSidenav} />
-      </Drawer>
-    </>
-  )
-}
-
-function DrawerContent({ darkMode, miniSidenav }) {
-  return (
-    <Box sx={{
-      height: '100%',
-      display: 'flex',
+  const DrawerContent = (
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
       flexDirection: 'column',
-      bgcolor: darkMode ? '#1a1a1a' : 'white',
-      color: darkMode ? '#fff' : 'inherit',
-      transition: 'background-color 0.3s, color 0.3s',
+      bgcolor: 'background.paper' 
     }}>
-      <Toolbar sx={{ px: 2, py: 2 }}>
-        <Image
-            src="/logo-lanscape.png"
-            alt="COCONUT Logo"
-            style={{ marginRight: '12px', maxWidth: '100%', height: 'auto', display: 'block', padding: '8px' }}
-            width={180}
-            height={180}
+      {/* Logo Section */}
+      <Box
+        sx={{
+          p: 3, // Increased padding
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          borderBottom: 1,
+          borderColor: 'divider'
+        }}
+      >
+        <Box sx={{ position: 'relative', width: 42, height: 42 }}> {/* Increased logo size */}
+          <Image
+            src="/images/coconut-logo.png"
+            alt="Logo"
+            fill
+            priority
+            style={{ objectFit: 'contain' }}
           />
-      </Toolbar>
-
-      <Box sx={{ px: 3, mb: 2 }}>
-        <Typography variant="body2" sx={{ color: darkMode ? '#fff' : 'inherit' }}>
-          MENU BENDAHARA
+        </Box>
+        <Typography 
+          variant="h6"
+          sx={{ 
+            fontWeight: 700,
+            color: 'primary.main',
+            fontSize: '1.2rem'
+          }}
+        >
+          Coconut Inventaris
         </Typography>
       </Box>
 
-      <List sx={{ px: 2, flex: 1 }}>
-        <MenuItems darkMode={darkMode} miniSidenav={miniSidenav} />
+      {/* Navigation Menu */}
+      <List sx={{ px: 2.5, py: 3, flex: 1 }}> {/* Increased padding */}
+        {menuItems.map((item) => (
+          <ListItem 
+            key={item.text}
+            onClick={() => {
+              router.push(item.path);
+              if (isMobile) onClose?.();
+            }}
+            sx={{
+              mb: 1, // Increased spacing between items
+              borderRadius: 2, // Increased border radius
+              cursor: 'pointer',
+              color: pathname === item.path ? 'primary.main' : 'text.secondary',
+              bgcolor: pathname === item.path ? 'primary.lighter' : 'transparent',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                bgcolor: 'primary.lighter',
+                color: 'primary.main',
+                transform: 'translateX(6px)'
+              },
+              py: 1.5 // Added vertical padding
+            }}
+          >
+            <ListItemIcon sx={{ 
+              color: 'inherit', 
+              minWidth: 45, // Increased icon width
+              fontSize: '1.2rem'
+            }}>
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText 
+              primary={item.text}
+              primaryTypographyProps={{
+                fontSize: '0.95rem',
+                fontWeight: pathname === item.path ? 600 : 500
+              }}
+            />
+          </ListItem>
+        ))}
       </List>
+
+      {/* Logout Button */}
+      <Box sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          color="error"
+          startIcon={<LogoutIcon />}
+          onClick={handleLogout}
+          sx={{
+            py: 1.5, // Increased button height
+            textTransform: 'none',
+            borderRadius: 2,
+            fontSize: '0.95rem',
+            fontWeight: 500,
+            '&:hover': {
+              bgcolor: 'error.lighter'
+            }
+          }}
+        >
+          Logout
+        </Button>
+      </Box>
     </Box>
-  )
+  );
+
+  return (
+    <Drawer
+      variant={variant}
+      open={open}
+      onClose={onClose}
+      ModalProps={{
+        keepMounted: true
+      }}
+      sx={{
+        display: { xs: 'block' },
+        '& .MuiDrawer-paper': {
+          width: 320, // Increased drawer width
+          boxSizing: 'border-box',
+          border: 'none',
+          boxShadow: variant === 'temporary' ? 
+            '0 8px 24px rgba(0,0,0,0.12)' : 
+            '0 0 20px rgba(0,0,0,0.05)',
+          bgcolor: 'background.paper'
+        }
+      }}
+    >
+      {DrawerContent}
+    </Drawer>
+  );
 }
