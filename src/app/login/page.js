@@ -4,82 +4,46 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Typography,
+  Card,
   TextField,
   Button,
-  Paper,
+  Typography,
   Alert,
-  Snackbar,
-  IconButton,
   InputAdornment,
-  CircularProgress,
+  IconButton,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { endpoints } from "@/config/api";
-import { setAuthCookie } from "@/utils/cookies";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import { authService } from "@/services/authService";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [nra, setNra] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setLoading(true);
 
     try {
-      // Input validation
-      if (!nra || !password) {
-        throw new Error("NRA dan password harus diisi");
+      const response = await authService.login(
+        formData.username,
+        formData.password
+      );
+
+      if (response.success) {
+        router.push("/dashboard");
+      } else {
+        setError(response.error);
       }
-
-      const response = await fetch(endpoints.ADMIN_LOGIN, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nra: nra.trim(),
-          password: password.trim(),
-        }),
-        credentials: "include",
-      });
-
-      const data = await response.json();
-
-      // Handle error responses
-      if (!response.ok) {
-        throw new Error(data.message || "Terjadi kesalahan pada server");
-      }
-
-      // Validate response structure
-      if (!data || typeof data !== "object") {
-        throw new Error("Format response tidak valid");
-      }
-
-      if (data.code !== 200) {
-        throw new Error(data.message || "Autentikasi gagal");
-      }
-
-      // Check if token exists in data field
-      if (!data.data || typeof data.data !== "string") {
-        throw new Error("Token tidak valid");
-      }
-
-      // Set auth cookie with the JWT token
-      await setAuthCookie({
-        token: data.data,
-      });
-
-      router.push("/dashboard");
     } catch (err) {
-      console.error("Login error:", err);
-      setError(err.message || "Gagal melakukan login");
-      setPassword("");
+      setError("Terjadi kesalahan saat login");
     } finally {
       setLoading(false);
     }
@@ -88,104 +52,93 @@ export default function LoginPage() {
   return (
     <Box
       sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
         minHeight: "100vh",
-        backgroundColor: "#f8fafc",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "#f8fafc",
         p: 2,
       }}
     >
-      <Paper
+      <Card
+        elevation={0}
         sx={{
-          p: 4,
           width: "100%",
           maxWidth: 400,
+          p: { xs: 3, sm: 4 },
+          border: "1px solid",
+          borderColor: "divider",
           borderRadius: 2,
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
         }}
       >
-        <Typography variant="h5" align="center" gutterBottom sx={{ mb: 3 }}>
-          Login Admin
+        <Typography
+          variant="h5"
+          fontWeight={700}
+          textAlign="center"
+          gutterBottom
+        >
+          Login
         </Typography>
 
-        <form onSubmit={handleLogin}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit}>
           <TextField
-            label="NRA"
-            variant="outlined"
             fullWidth
-            margin="normal"
-            value={nra}
-            onChange={(e) => setNra(e.target.value)}
+            label="NRA"
+            value={formData.username}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                username: e.target.value,
+              }))
+            }
             required
             sx={{ mb: 2 }}
-            inputProps={{
-              maxLength: 20,
-            }}
           />
 
           <TextField
+            fullWidth
             label="Password"
             type={showPassword ? "text" : "password"}
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={formData.password}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                password: e.target.value,
+              }))
+            }
             required
-            sx={{ mb: 3 }}
-            inputProps={{
-              maxLength: 50,
-            }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
                     onClick={() => setShowPassword(!showPassword)}
                     edge="end"
-                    aria-label="toggle password visibility"
                   >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                   </IconButton>
                 </InputAdornment>
               ),
             }}
+            sx={{ mb: 3 }}
           />
 
           <Button
-            type="submit"
-            variant="contained"
             fullWidth
-            size="large"
+            variant="contained"
+            type="submit"
             disabled={loading}
-            sx={{
-              py: 1.5,
-              backgroundColor: "#1976d2",
-              "&:hover": {
-                backgroundColor: "#1565c0",
-              },
-            }}
+            sx={{ py: 1.5 }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
+            {loading ? "Memproses..." : "Masuk"}
           </Button>
         </form>
-
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError("")}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Alert
-            severity="error"
-            onClose={() => setError("")}
-            sx={{ width: "100%" }}
-            elevation={6}
-          >
-            {error}
-          </Alert>
-        </Snackbar>
-      </Paper>
+      </Card>
     </Box>
   );
 }

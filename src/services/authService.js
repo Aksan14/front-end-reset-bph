@@ -1,39 +1,45 @@
-import { API_BASE_URL, API_ENDPOINTS, getHeaders } from '@/config/api';
+import { endpoints } from '@/config/api';
 import Cookies from 'js-cookie';
 
 export const authService = {
-    login: async (username, password) => {
+    login: async (nra, password) => {
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-            const response = await fetch(`${apiUrl}/login`, {
+            const response = await fetch(endpoints.ADMIN_LOGIN, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ nra, password })
             });
-            const responseData = await response.json();
-            if (!response.ok || !responseData.success) {
+
+            const data = await response.json();
+
+            // Check response format
+            if (data.code !== 200) {
                 return {
                     success: false,
-                    error: responseData.error || responseData.message || 'Login gagal'
+                    error: data.message || 'Login gagal'
                 };
             }
-            // Jika login berhasil
-            const user = responseData.user || responseData.data?.user || { username };
-            const token = responseData.token || responseData.data?.token;
-            if (token) {
-                Cookies.set('authToken', token, { expires: 1 });
+
+            // Save token to cookie (data.data contains the JWT token)
+            if (data.data) {
+                Cookies.set('authToken', data.data, { expires: 7 }); // Token expires in 7 days
+                
+                // Save minimal user info
+                const user = { nra };
+                localStorage.setItem('user', JSON.stringify(user));
             }
-            localStorage.setItem('user', JSON.stringify(user));
+
             return {
                 success: true,
                 data: {
-                    token,
-                    user
+                    token: data.data,
+                    user: { nra }
                 }
             };
+
         } catch (error) {
             console.error('Login error:', error);
             return {
@@ -42,4 +48,23 @@ export const authService = {
             };
         }
     },
-}; 
+
+    logout: () => {
+        Cookies.remove('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    },
+
+    isAuthenticated: () => {
+        return !!Cookies.get('authToken');
+    },
+
+    getToken: () => {
+        return Cookies.get('authToken');
+    },
+
+    getUser: () => {
+        const user = localStorage.getItem('user');
+        return user ? JSON.parse(user) : null;
+    }
+};

@@ -51,7 +51,7 @@ import {
   finalizeReport,
 } from "@/services/pengecekanService";
 import { API_BASE_URL } from "@/config/api";
-import ProtectedRoute from "@/utils/protect_route";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function PengecekanPage() {
   const [petugas, setPetugas] = useState("");
@@ -748,11 +748,20 @@ export default function PengecekanPage() {
 
   return (
     <ProtectedRoute>
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5" mb={3} fontWeight="600" color="primary">
-          Pengecekan Inventaris Bulanan
-        </Typography>
-
+      <Box
+        sx={{
+          width: "100%",
+          backgroundColor: '#f8fafc',
+          px: { xs: 0, sm: 2 }, // Reduced padding
+          py: { xs: 1, sm: 2 },
+          ml: {
+            xs: 0,
+            sm: "0px",
+            md: "20px",
+          },
+          mr: { xs: 0, sm: 2 }, // Added right margin
+        }}
+      >
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -780,40 +789,59 @@ export default function PengecekanPage() {
             boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
             p: 3,
             mb: 4,
-            backgroundColor: "background.paper",
           }}
         >
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" }, // Stack vertically on mobile
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: { xs: "stretch", sm: "center" }, // Stretch on mobile, center on desktop
+              gap: 2,
               mb: 3,
             }}
           >
-            <Typography variant="h6" fontWeight="600">
-              Daftar Laporan Pengecekan
+            <Typography
+              variant="h4"
+              sx={{
+                fontSize: { xs: "1.5rem", sm: "2rem" },
+                fontWeight: 800,
+                color: "primary.dark",
+                mb: 0.5,
+              }}
+            >
+              Halaman Pengecekan Inventaris
             </Typography>
 
             {!reportId && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" }, // Stack vertically on mobile
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
                 <TextField
                   label="Nama Petugas"
                   value={petugas}
                   onChange={(e) => setPetugas(e.target.value)}
                   required
                   size="small"
-                  sx={{ width: 250 }}
-                  variant="outlined"
+                  sx={{
+                    width: { xs: "100%", sm: 200 }, // Fixed width on desktop, full width on mobile
+                  }}
                 />
                 <Button
                   variant="contained"
                   onClick={() => handleStartReport(petugas)}
                   disabled={loading || !petugas.trim()}
                   sx={{
-                    borderRadius: "8px",
-                    px: 3,
+                    height: 40,
+                    width: { xs: "100%", sm: "auto" }, // Full width on mobile, auto on desktop
+                    borderRadius: 1.5,
                     textTransform: "none",
+                    fontSize: "0.875rem",
                   }}
                 >
                   Buat Laporan Baru
@@ -849,11 +877,19 @@ export default function PengecekanPage() {
         <Dialog
           open={openWorkspaceDialog}
           onClose={() => setOpenWorkspaceDialog(false)}
-          maxWidth="xl"
+          maxWidth="lg" // Changed from xl to lg
           fullWidth
+          sx={{
+            "& .MuiDialog-paper": {
+              width: { xs: "100%", sm: "90%", md: "80%" },
+              m: { xs: 0, sm: 2 },
+              maxHeight: "90vh",
+            },
+          }}
         >
           <DialogTitle>
-            Workspace Pengecekan: {selectedReport?.kode_report} ({status.toUpperCase()})
+            Workspace Pengecekan: {selectedReport?.kode_report} (
+            {status.toUpperCase()})
           </DialogTitle>
           <DialogContent>
             {reportId && selectedReport && (
@@ -908,7 +944,14 @@ export default function PengecekanPage() {
                   </Button>
                 </Box>
 
-                <TableContainer component={Paper}>
+                <TableContainer
+                  component={Paper}
+                  sx={{
+                    "& .MuiTable-root": {
+                      minWidth: { xs: "100%", sm: 650 }, // Reduced from 800 to 650
+                    },
+                  }}
+                >
                   <Table>
                     <TableHead>
                       <TableRow>
@@ -1054,7 +1097,9 @@ export default function PengecekanPage() {
                                 <Tooltip title="Hapus">
                                   <IconButton
                                     color="error"
-                                    onClick={() => handleDeleteCheck(item.checkId)}
+                                    onClick={() =>
+                                      handleDeleteCheck(item.checkId)
+                                    }
                                     disabled={!item.checked}
                                   >
                                     <DeleteIcon />
@@ -1114,8 +1159,14 @@ export default function PengecekanPage() {
         <Dialog
           open={openViewDialog}
           onClose={() => setOpenViewDialog(false)}
-          maxWidth="md"
+          maxWidth="sm" // Changed from md to sm
           fullWidth
+          sx={{
+            "& .MuiDialog-paper": {
+              width: { xs: "100%", sm: "90%" },
+              m: { xs: 0, sm: 2 },
+            },
+          }}
         >
           <DialogTitle>Detail Barang</DialogTitle>
           <DialogContent>

@@ -34,12 +34,12 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LockIcon from "@mui/icons-material/Lock";
 import { useState, useEffect } from "react";
-import { borrowService } from "@/services/borrowService";
-import BorrowHistoryTable from "@/components/dashboard/BorrowHistoryTable";
-import { endpoints } from "@/config/api";
-import ProtectedRoute from "@/utils/protect_route";
+import { borrowService } from "@/services/borrowService"; // Restored original import
+import BorrowHistoryTable from "@/components/dashboard/BorrowHistoryTable"; // Restored original import
+import { endpoints } from "@/config/api"; // Restored original import
 import { alpha, createTheme, ThemeProvider } from "@mui/material/styles";
-import PasswordDialog from "@/components/PasswordDialog";
+import PasswordDialog from "@/components/PasswordDialog"; // Restored original import
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Enhanced StatCard Component
 const StatCard = ({ icon: Icon, title, value, color = "primary" }) => {
@@ -62,7 +62,10 @@ const StatCard = ({ icon: Icon, title, value, color = "primary" }) => {
         overflow: "hidden",
         "&:hover": {
           transform: { xs: "none", md: "translateY(-8px)" },
-          boxShadow: `0 20px 25px -5px ${alpha(theme.palette[color].main, 0.2)}`,
+          boxShadow: `0 20px 25px -5px ${alpha(
+            theme.palette[color].main,
+            0.2
+          )}`,
           "& .stat-icon": {
             transform: "scale(1.1) rotate(10deg)",
             background: theme.palette[color].main,
@@ -71,7 +74,10 @@ const StatCard = ({ icon: Icon, title, value, color = "primary" }) => {
         },
       }}
     >
-      <Stack spacing={{ xs: 2, sm: 2.5, md: 3 }} sx={{ position: "relative", zIndex: 1 }}>
+      <Stack
+        spacing={{ xs: 2, sm: 2.5, md: 3 }}
+        sx={{ position: "relative", zIndex: 1 }}
+      >
         <Box
           className="stat-icon"
           sx={{
@@ -221,12 +227,13 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [allResponse, borrowedResponse, brokenResponse] =
-        await Promise.all([
+      const [allResponse, borrowedResponse, brokenResponse] = await Promise.all(
+        [
           fetch(endpoints.STATS_BARANG_ALL),
           fetch(endpoints.STATS_BARANG_DIPINJAM),
           fetch(endpoints.STATS_BARANG_RUSAKBERAT),
-        ]);
+        ]
+      );
 
       const allResult = await allResponse.json();
       const borrowedResult = await borrowedResponse.json();
@@ -270,288 +277,315 @@ export default function Dashboard() {
   };
 
   return (
-    <Box
-      sx={{
-        p: { xs: 2, sm: 2.5, md: 3 },
-        minHeight: "100vh",
-        ml: { xs: 1, sm: 2 }, // Add left margin for gap with sidebar
-        backgroundColor: "#f8faff", // Light background to differentiate
-        borderRadius: { xs: "16px", sm: "24px" }, // Optional: rounded corners
-        boxShadow: "0 0 20px rgba(0,0,0,0.02)", // Subtle shadow for depth
-      }}
-    >
-      <ThemeProvider theme={theme}>
-        <Box
-          sx={{
-            p: { xs: 2, sm: 2.5, md: 3 },
-            minHeight: "100vh",
-            background: `linear-gradient(to bottom right, ${alpha(
-              theme.palette.background.paper,
-              1
-            )}, ${alpha(theme.palette.primary.light, 0.05)})`,
-            position: "relative",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "35%",
-              background: `linear-gradient(135deg, ${alpha(
-                theme.palette.primary.main,
-                0.08
-              )} 0%, ${alpha(theme.palette.primary.light, 0.03)} 100%)`,
-              zIndex: 0,
-            },
-          }}
-        >
-          <Stack spacing={{ xs: 2, sm: 2.5, md: 3 }} sx={{ position: "relative", zIndex: 1 }}>
-            {/* Enhanced Header */}
-            <Box
-              sx={{
-                mb: 3,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
+    <ProtectedRoute>
+      <Box
+        sx={{
+          p: { xs: 2, sm: 2.5, md: 3 },
+          minHeight: "100vh",
+          ml: { xs: 1, sm: 2 },
+          backgroundColor: "#f8faff",
+          borderRadius: { xs: "16px", sm: "24px" },
+          boxShadow: "0 0 20px rgba(0,0,0,0.02)",
+          minWidth: { xs: "320px", sm: "auto" },
+          maxWidth: "100%",
+          overflowX: "hidden",
+        }}
+      >
+        <ThemeProvider theme={theme}>
+          <Box
+            sx={{
+              p: { xs: 2, sm: 2.5, md: 3 },
+              minHeight: "100vh",
+              background: `linear-gradient(to bottom right, ${alpha(
+                theme.palette.background.paper,
+                1
+              )}, ${alpha(theme.palette.primary.light, 0.05)})`,
+              position: "relative",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "35%",
+                background: `linear-gradient(135deg, ${alpha(
+                  theme.palette.primary.main,
+                  0.08
+                )} 0%, ${alpha(theme.palette.primary.light, 0.03)} 100%)`,
+                zIndex: 0,
+              },
+            }}
+          >
+            <Stack
+              spacing={{ xs: 2, sm: 2.5, md: 3 }}
+              sx={{ position: "relative", zIndex: 1 }}
             >
-              <Stack spacing={1}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderRadius: "16px",
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    }}
-                  >
-                    <DashboardIcon
-                      sx={{ fontSize: 28, color: theme.palette.primary.main }}
-                    />
+              {/* Enhanced Header */}
+              <Box
+                sx={{
+                  mb: 3,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
+                <Stack spacing={1}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: "16px",
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      }}
+                    >
+                      <DashboardIcon
+                        sx={{ fontSize: 28, color: theme.palette.primary.main }}
+                      />
+                    </Box>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: { xs: "1.5rem", md: "2rem" },
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      Dashboard Inventaris
+                    </Typography>
                   </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: { xs: "1.5rem", md: "2rem" },
-                      background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                    }}
-                  >
-                    Dashboard Inventaris
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      bgcolor: "success.main",
-                      boxShadow: `0 0 0 3px ${alpha(theme.palette.success.main, 0.2)}`,
-                    }}
-                  />
-                  <Typography
-                    sx={{ color: "text.secondary", fontSize: "0.95rem" }}
-                  >
-                    Sistem aktif dan berjalan dengan baik
-                  </Typography>
+                  {/* <Stack direction="row" spacing={2} alignItems="center">
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: "success.main",
+                        boxShadow: `0 0 0 3px ${alpha(
+                          theme.palette.success.main,
+                          0.2
+                        )}`,
+                      }}
+                    />
+                    <Typography
+                      sx={{ color: "text.secondary", fontSize: "0.95rem" }}
+                    >
+                    </Typography>
+                  </Stack> */}
                 </Stack>
-              </Stack>
 
-              {/* Responsive Action Buttons */}
+                {/* Responsive Action Buttons */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    width: { xs: "100%", sm: "auto" },
+                    justifyContent: { xs: "flex-end", sm: "flex-end" },
+                  }}
+                >
+                  <Tooltip title="Pengaturan">
+                    <IconButton
+                      onClick={handleMenuClick}
+                      sx={{
+                        bgcolor: "background.paper",
+                        boxShadow: 1,
+                        "&:hover": { bgcolor: "background.paper" },
+                      }}
+                    >
+                      <SettingsIcon />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="Notifikasi">
+                    <IconButton
+                      sx={{
+                        bgcolor: "background.paper",
+                        boxShadow: 1,
+                        "&:hover": { bgcolor: "background.paper" },
+                      }}
+                    >
+                      <Badge badgeContent={3} color="error">
+                        <NotificationsIcon />
+                      </Badge>
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                {/* Updated Settings Menu */}
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  PaperProps={{
+                    sx: {
+                      mt: 1.5,
+                      width: { xs: "200px", sm: "250px" },
+                      boxShadow:
+                        "rgb(145 158 171 / 24%) 0px 0px 2px 0px, rgb(145 158 171 / 24%) 0px 20px 40px -4px",
+                      "& .MuiMenuItem-root": {
+                        px: 2,
+                        py: 1.5,
+                        typography: "body1",
+                        fontSize: { xs: "0.95rem", sm: "1rem" },
+                      },
+                    },
+                  }}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: isMobile ? "right" : "right",
+                  }}
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: isMobile ? "right" : "right",
+                  }}
+                >
+                  <MenuItem
+                    onClick={handlePasswordUpdate}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    <LockIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                    Update Password
+                  </MenuItem>
+                </Menu>
+
+                {/* Password Dialog Component */}
+                <PasswordDialog
+                  open={passwordDialog}
+                  setOpen={setPasswordDialog}
+                />
+              </Box>
+
+              {/* Stats Grid */}
               <Box
                 sx={{
                   display: "flex",
-                  gap: 1,
-                  width: { xs: "100%", sm: "auto" },
-                  justifyContent: { xs: "flex-end", sm: "flex-end" },
-                }}
-              >
-                <Tooltip title="Pengaturan">
-                  <IconButton
-                    onClick={handleMenuClick}
-                    sx={{
-                      bgcolor: "background.paper",
-                      boxShadow: 1,
-                      "&:hover": { bgcolor: "background.paper" },
-                    }}
-                  >
-                    <SettingsIcon />
-                  </IconButton>
-                </Tooltip>
-
-                <Tooltip title="Notifikasi">
-                  <IconButton
-                    sx={{
-                      bgcolor: "background.paper",
-                      boxShadow: 1,
-                      "&:hover": { bgcolor: "background.paper" },
-                    }}
-                  >
-                    <Badge badgeContent={3} color="error">
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
-              </Box>
-
-              {/* Updated Settings Menu */}
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    mt: 1.5,
-                    width: { xs: "200px", sm: "250px" },
-                    boxShadow:
-                      "rgb(145 158 171 / 24%) 0px 0px 2px 0px, rgb(145 158 171 / 24%) 0px 20px 40px -4px",
-                    "& .MuiMenuItem-root": {
-                      px: 2,
-                      py: 1.5,
-                      typography: "body1",
-                      fontSize: { xs: "0.95rem", sm: "1rem" },
-                    },
-                  },
-                }}
-                anchorOrigin={{
-                  vertical: "bottom",
-                  horizontal: isMobile ? "right" : "right",
-                }}
-                transformOrigin={{
-                  vertical: "top",
-                  horizontal: isMobile ? "right" : "right",
-                }}
-              >
-                <MenuItem
-                  onClick={handlePasswordUpdate}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                  }}
-                >
-                  <LockIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
-                  Update Password
-                </MenuItem>
-              </Menu>
-
-              {/* Password Dialog Component */}
-              <PasswordDialog
-                open={passwordDialog}
-                setOpen={setPasswordDialog}
-              />
-            </Box>
-
-            {/* Stats Grid */}
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", md: "row" },
-                gap: { xs: 2, sm: 2.5, md: 3 },
-                "& > *": {
-                  flex: 1,
-                  minWidth: 0, // Prevents flex items from overflowing
-                },
-              }}
-            >
-              <StatCard
-                icon={InventoryIcon}
-                title="Total Peminjaman"
-                value="18"
-                color="primary"
-              />
-              <StatCard
-                icon={AccessTimeIcon}
-                title="Sedang Dipinjam"
-                value="1"
-                color="warning"
-              />
-              <StatCard
-                icon={ErrorOutlineIcon}
-                title="Barang Rusak"
-                value="1"
-                color="error"
-              />
-            </Box>
-
-            {/* BorrowHistoryTable Container */}
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: { xs: 1.5, sm: 2 },
-                overflow: "hidden",
-              }}
-            >
-              <Box
-                sx={{
-                  p: { xs: 2, sm: 2.5, md: 3 },
-                  borderBottom: 1,
-                  borderColor: "divider",
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: { xs: "1.1rem", sm: "1.2rem", md: "1.25rem" },
-                  }}
-                >
-                  Aktivitas Terbaru
-                </Typography>
-              </Box>
-
-              <Box
-                sx={{
-                  overflowX: "auto",
-                  "& .MuiDataGrid-root": {
-                    minWidth: isTablet ? 800 : "auto",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: { xs: 2, sm: 2.5, md: 3 },
+                  "& > *": {
+                    flex: 1,
+                    minWidth: { xs: "100%", md: 0 },
+                    maxWidth: "100%",
                   },
                 }}
               >
-                <BorrowHistoryTable
-                  borrows={recentBorrows}
-                  loading={loading}
-                  sx={{
-                    "& .MuiDataGrid-columnHeaders": {
-                      fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" },
-                    },
-                    "& .MuiDataGrid-cell": {
-                      fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
-                    },
-                  }}
+                <StatCard
+                  icon={InventoryIcon}
+                  title="Total Peminjaman"
+                  value={totalItems}
+                  color="primary"
+                />
+                <StatCard
+                  icon={AccessTimeIcon}
+                  title="Sedang Dipinjam"
+                  value={totalBorrowed}
+                  color="warning"
+                />
+                <StatCard
+                  icon={ErrorOutlineIcon}
+                  title="Barang Dimusnahkan"
+                  value={totalBroken}
+                  color="error"
                 />
               </Box>
-            </Card>
-          </Stack>
 
-          {/* Snackbar */}
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={6000}
-            onClose={handleCloseSnackbar}
-            anchorOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            <Alert
+              {/* BorrowHistoryTable Container */}
+              <Card
+                elevation={0}
+                sx={{
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  overflow: "hidden",
+                  width: "100%",
+                  maxWidth: "100%",
+                }}
+              >
+                <Box
+                  sx={{
+                    p: { xs: 2, sm: 2.5, md: 3 },
+                    borderBottom: 1,
+                    borderColor: "divider",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: { xs: "1.1rem", sm: "1.2rem", md: "1.25rem" },
+                    }}
+                  >
+                    Peminjaman Terbaru
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    overflowX: "auto",
+                    maxWidth: "100%",
+                    WebkitOverflowScrolling: "touch",
+                    "& .MuiDataGrid-root": {
+                      minWidth: { xs: "600px", sm: "800px" },
+                      "& .MuiDataGrid-cell": {
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      },
+                    },
+                  }}
+                >
+                  <BorrowHistoryTable
+                    borrows={recentBorrows}
+                    loading={loading}
+                    sx={{
+                      "& .MuiDataGrid-columnHeaders": {
+                        fontSize: { xs: "0.813rem", sm: "0.875rem" },
+                      },
+                      "& .MuiDataGrid-cell": {
+                        fontSize: { xs: "0.75rem", sm: "0.813rem" },
+                      },
+                    }}
+                  />
+                </Box>
+              </Card>
+            </Stack>
+
+            {/* Snackbar */}
+            <Snackbar
+              open={snackbar.open}
+              autoHideDuration={6000}
               onClose={handleCloseSnackbar}
-              severity={snackbar.severity}
-              sx={{
-                width: "100%",
-                borderRadius: "12px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                fontWeight: 600,
-                alignItems: "center",
+              anchorOrigin={{
+                vertical: "top",
+                horizontal: isMobile ? "center" : "right",
               }}
-              iconMapping={{
-                error: <ErrorOutlineIcon sx={{ fontSize: "1.5rem" }} />,
+              sx={{
+                width: { xs: "calc(100% - 32px)", sm: "auto" },
+                maxWidth: { xs: "400px", sm: "none" },
               }}
             >
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        </Box>
-      </ThemeProvider>
-    </Box>
+              <Alert
+                onClose={handleCloseSnackbar}
+                severity={snackbar.severity}
+                sx={{
+                  width: "100%",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                  fontWeight: 600,
+                  alignItems: "center",
+                }}
+                iconMapping={{
+                  error: <ErrorOutlineIcon sx={{ fontSize: "1.5rem" }} />,
+                }}
+              >
+                {snackbar.message}
+              </Alert>
+            </Snackbar>
+          </Box>
+        </ThemeProvider>
+      </Box>
+    </ProtectedRoute>
   );
 }

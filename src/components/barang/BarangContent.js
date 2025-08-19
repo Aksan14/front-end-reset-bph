@@ -52,7 +52,7 @@ import InventoryIcon from "@mui/icons-material/Inventory";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningIcon from "@mui/icons-material/Warning";
 import DangerousIcon from "@mui/icons-material/Dangerous";
-import ProtectedRoute from "@/utils/protect_route";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
 function SlideTransition(props) {
@@ -110,10 +110,9 @@ const TablePaginationStyled = ({ count, page, onChange }) => (
     sx={{
       display: "flex",
       justifyContent: "center",
-      py: 2,
+      py: { xs: 1.5, sm: 2 },
       borderTop: 1,
       borderColor: "divider",
-      bgcolor: alpha(customColors.primary.lighter, 0.5),
     }}
   >
     <Pagination
@@ -125,11 +124,10 @@ const TablePaginationStyled = ({ count, page, onChange }) => (
       size={isMobile ? "small" : "medium"}
       sx={{
         "& .MuiPaginationItem-root": {
-          borderRadius: 1,
-          mx: { xs: 0.2, sm: 0.5 },
-          minWidth: { xs: 32, sm: 40 },
-          height: { xs: 32, sm: 40 },
-          fontSize: { xs: "0.875rem", sm: "1rem" },
+          minWidth: { xs: 28, sm: 32 },
+          height: { xs: 28, sm: 32 },
+          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+          mx: { xs: 0.25, sm: 0.5 },
         },
       }}
     />
@@ -139,16 +137,25 @@ const TablePaginationStyled = ({ count, page, onChange }) => (
 const tableContainerStyles = {
   overflowX: "auto",
   "& table": {
-    minWidth: { xs: 650, sm: 800 },
-    "& th, & td": {
+    minWidth: { xs: "100%", sm: 800 },
+    "& th": {
       px: { xs: 1, sm: 2 },
       py: { xs: 1.5, sm: 2 },
-      "&:first-of-type": {
-        pl: { xs: 2, sm: 3 },
-      },
-      "&:last-of-type": {
-        pr: { xs: 2, sm: 3 },
-      },
+      fontSize: { xs: "0.813rem", sm: "0.875rem" },
+      fontWeight: 600,
+    },
+    "& td": {
+      px: { xs: 1, sm: 2 },
+      py: { xs: 1.5, sm: 2 },
+      fontSize: { xs: "0.813rem", sm: "0.875rem" },
+    },
+    "& .MuiAvatar-root": {
+      width: { xs: 40, sm: 56 },
+      height: { xs: 40, sm: 56 },
+    },
+    "& .MuiChip-root": {
+      height: { xs: 24, sm: 32 },
+      fontSize: { xs: "0.75rem", sm: "0.813rem" },
     },
   },
 };
@@ -188,6 +195,19 @@ const tableColumns = [
   { id: "satuan", label: "Satuan", mobile: false, minWidth: { xs: 80, sm: 100 } },
   { id: "kondisi", label: "Kondisi", mobile: true, minWidth: { xs: 100, sm: 120 } },
   { id: "aksi", label: "Aksi", mobile: true, minWidth: { xs: 120, sm: 160 } }
+];
+
+const mobileColumns = [
+  { 
+    id: 'foto', 
+    label: '', 
+    width: { xs: 50, sm: 80 } 
+  },
+  { 
+    id: 'namaBarang', 
+    label: 'Nama Barang',
+    fontSize: { xs: '0.813rem', sm: '0.875rem' }
+  }
 ];
 
 const imageDialogStyles = {
@@ -242,8 +262,10 @@ export default function DataBarang() {
   const [currentPage, setCurrentPage] = useState(1);
   const [dimusnahkanPage, setDimusnahkanPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchValue, setSearchValue] = useState('');
+  const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [selectedBarang, setSelectedBarang] = useState(null);
   const itemsPerPage = 10;
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
 
   const fetchBarang = async () => {
@@ -287,49 +309,26 @@ export default function DataBarang() {
     };
   }, []);
 
-  const handleSearch = async () => {
+  // Update handleSearch function
+  const handleSearch = (value) => {
+    setSearchQuery(value);
     try {
-      if (!searchQuery.trim()) {
-        // Jika query kosong, fetch semua data
-        await fetchBarang();
+      if (value.trim() === '') {
+        fetchBarang();
         return;
       }
-
-      setLoading(true);
-      const result = await barangService.search(searchQuery);
-      if (result.success) {
-        setBarang(result.data);
-        setCurrentPage(1);
-        setDimusnahkanPage(1);
-        setSnackbar({
-          open: true,
-          message: "Pencarian berhasil",
-          severity: "success",
-        });
-      } else {
-        setBarang([]);
-        setSnackbar({
-          open: true,
-          message: result.message || "Gagal mencari data barang",
-          severity: "error",
-        });
-      }
+      const filtered = barang.filter(item => 
+        item.Namabarang.toLowerCase().includes(value.toLowerCase()) ||
+        item.Kategori.toLowerCase().includes(value.toLowerCase())
+      );
+      setBarang(filtered); // Use setBarang instead of undefined setCurrentItems
     } catch (error) {
-      console.error("Error searching barang:", error);
-      setBarang([]);
+      console.error("Error searching:", error);
       setSnackbar({
         open: true,
         message: "Terjadi kesalahan saat mencari data",
-        severity: "error",
+        severity: "error"
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
     }
   };
 
@@ -579,6 +578,11 @@ export default function DataBarang() {
     setSelectedImage(null);
   };
 
+  const handleOpenDetail = (item) => {
+    setSelectedBarang(item);
+    setOpenDetailDialog(true);
+  };
+
   // Paginasi Logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -603,244 +607,518 @@ export default function DataBarang() {
 
   return (
     <ProtectedRoute>
-      <Box
-        sx={{
-          p: { xs: 2, sm: 2.5, md: 3 },
-          minHeight: "100vh",
-          backgroundColor: "#f8fafc",
-          ml: { xs: 1, sm: 2 },
-          borderRadius: { xs: "16px", sm: "24px" },
-        }}
-      >
-        <Stack spacing={{ xs: 2, sm: 2.5, md: 3 }}>
-          {/* Header Section */}
-          <Box>
+      <Box sx={{ 
+  width: '100%',
+  bgcolor: { xs: '#f8fafc', sm: 'transparent' },
+  px: { xs: 0, sm: 2 },
+  py: { xs: 1, sm: 2 }
+}}>
+        <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
+          {/* Header */}
+          <Box sx={{ px: { xs: 2, sm: 0 } }}>
             <Typography
               variant="h4"
               sx={{
+                fontSize: { xs: '1.5rem', sm: '2rem' },
                 fontWeight: 800,
-                fontSize: { xs: "1.75rem", sm: "2rem", md: "2.25rem" },
-                color: "primary.dark",
-                mb: 1,
+                color: 'primary.dark',
+                mb: 0.5
               }}
             >
               Data Inventaris
             </Typography>
             <Typography
               sx={{
-                color: "text.secondary",
-                fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" },
+                color: 'text.secondary',
+                fontSize: { xs: '0.875rem', sm: '1rem' }
               }}
             >
               Kelola data barang inventaris
             </Typography>
           </Box>
 
-          {/* Search Section */}
+          {/* Search & Add Section */}
           <Card
             elevation={0}
             sx={{
-              p: { xs: 2, sm: 2.5 },
-              borderRadius: 2,
+              mx: { xs: 2, sm: 0 },
+              p: { xs: 1.5, sm: 2 },
+              borderRadius: { xs: 2, sm: 2 },
+              bgcolor: 'white',
               border: '1px solid',
               borderColor: 'divider'
             }}
           >
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={2}
-            >
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: 2,
-                width: '100%'
-              }}>
-                <Box sx={{ 
-                  display: 'flex',
-                  gap: 1,
-                  width: '100%'
-                }}>
-                  <TextField
-                    size="small"
-                    placeholder="Cari barang..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSearch();
-                      }
-                    }}
-                    fullWidth
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        backgroundColor: alpha(customColors.primary.lighter, 0.8)
-                      }
-                    }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon color="action" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={handleSearch}
-                    sx={{
-                      minWidth: { xs: '80px', sm: '100px' },
-                      height: '40px',
-                      borderRadius: 2,
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {isMobile ? 'Cari' : 'Cari Barang'}
-                  </Button>
-                </Box>
-
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleOpenAdd}
-                  sx={{
-                    width: { xs: '100%', sm: 'auto' },
-                    height: '40px',
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600
-                  }}
-                >
-                  Tambah Barang
-                </Button>
-              </Box>
+            <Stack spacing={1.5}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Cari barang..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconButton 
+                        onClick={() => handleSearch(searchQuery)}
+                        edge="start"
+                        size="small"
+                      >
+                        <SearchIcon sx={{ color: 'text.secondary' }} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper',
+                    borderRadius: 1.5
+                  }
+                }}
+              />
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenAdd}
+                sx={{
+                  height: 40,
+                  bgcolor: 'primary.dark',
+                  borderRadius: 1.5,
+                  textTransform: 'none',
+                  fontSize: '0.875rem'
+                }}
+              >
+                Tambah Barang
+              </Button>
             </Stack>
           </Card>
 
-          {/* Mobile Search & Add Buttons */}
-          {isMobile && !showMobileSearch && (
-            <>
-              <Fab
-                color="primary"
-                aria-label="search"
-                onClick={() => setShowMobileSearch(true)}
-                sx={{
-                  position: "fixed",
-                  right: 16,
-                  top: 16,
-                  zIndex: 1000,
-                }}
-              >
-                <SearchIcon />
-              </Fab>
-              <Fab
-                color="primary"
-                aria-label="add"
-                onClick={handleOpenAdd}
-                sx={{
-                  position: "fixed",
-                  right: 16,
-                  bottom: 16,
-                  zIndex: 1000,
-                }}
-              >
-                <AddIcon />
-              </Fab>
-            </>
-          )}
-
-          {/* Active Items Table */}
+          {/* Active Items List */}
           <Card
             elevation={0}
             sx={{
-              borderRadius: 2,
-              border: "1px solid",
-              borderColor: "divider",
+              mx: { xs: 2, sm: 0 },
+              borderRadius: { xs: 2, sm: 2 },
+              bgcolor: 'white',
+              border: '1px solid',
+              borderColor: 'divider',
+              overflow: 'hidden'
             }}
           >
-            <Box sx={{ p: 2.5, borderBottom: 1, borderColor: "divider" }}>
+            <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Typography
-                variant="h6"
+                variant="subtitle1"
                 sx={{
-                  fontWeight: 600,
-                  fontSize: { xs: "1.1rem", sm: "1.2rem" },
+                  fontSize: '1rem',
+                  fontWeight: 600
                 }}
               >
                 Daftar Barang Aktif
               </Typography>
             </Box>
 
-            <TableContainer sx={tableContainerStyles}>
-              <Table>
-                <TableHead>
-                  <TableRow
-                    sx={{
-                      bgcolor: alpha(customColors.primary.lighter, 0.5),
+            {/* Mobile List View */}
+            {isMobile ? (
+              <Stack divider={<Divider />}>
+                {currentItems.map((item) => (
+                  <Box
+                    key={item.id}
+                    onClick={() => handleOpenDetail(item)}
+                    sx={{ 
+                      p: 2,
+                      cursor: 'pointer',
+                      '&:active': { bgcolor: 'action.selected' }
                     }}
                   >
-                    {tableColumns.map((column) => (
-                      <TableCell
-                        key={column.id}
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar
+                        src={item.Foto ? `${API_BASE_URL}${item.Foto}` : undefined}
+                        variant="rounded"
                         sx={{
-                          ...tableHeaderCellStyles,
-                          display: {
-                            xs: column.mobile ? "table-cell" : "none",
-                            sm: "table-cell",
-                          },
-                          minWidth: column.minWidth
+                          width: 56,
+                          height: 56,
+                          bgcolor: item.Foto ? 'transparent' : '#e2e8f0'
                         }}
                       >
-                        {column.label}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell 
-                        colSpan={7} 
-                        align="center" 
+                        {!item.Foto && <ImageIcon />}
+                      </Avatar>
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography 
+                          fontWeight={500}
+                          sx={{ fontSize: '0.9rem', mb: 0.5 }}
+                        >
+                          {item.Namabarang}
+                        </Typography>
+                        <Chip
+                          icon={getConditionIcon(item.Kondisi)}
+                          label={item.Kondisi}
+                          color={getConditionColor(item.Kondisi)}
+                          size="small"
+                          sx={{ 
+                            height: 24,
+                            '& .MuiChip-label': {
+                              px: 1,
+                              fontSize: '0.75rem'
+                            }
+                          }}
+                        />
+                      </Box>
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            ) : (
+              // Existing table view for desktop
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow
+                      sx={{
+                        bgcolor: alpha(customColors.primary.lighter, 0.5),
+                      }}
+                    >
+                      {isMobile ? (
+                        mobileColumns.map((column) => (
+                          <TableCell
+                            key={column.id}
+                            sx={{
+                              fontWeight: 600,
+                              color: '#4a5568',
+                              width: column.width,
+                              flex: column.flex
+                            }}
+                          >
+                            {column.label}
+                          </TableCell>
+                        ))
+                      ) : (
+                        // existing desktop columns
+                        tableColumns.map((column) => (
+                          <TableCell
+                            key={column.id}
+                            sx={{
+                              ...tableHeaderCellStyles,
+                              minWidth: column.minWidth
+                            }}
+                          >
+                            {column.label}
+                          </TableCell>
+                        ))
+                      )}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {currentItems.map((item) => (
+                      <TableRow 
+                        key={item.id} 
+                        hover
+                        onClick={() => isMobile && handleOpenDetail(item)}
                         sx={{ 
-                          py: 8,
-                          px: { xs: 2, sm: 3 }
+                          cursor: isMobile ? 'pointer' : 'default',
+                          '&:hover': {
+                            bgcolor: alpha(customColors.primary.lighter, 0.1)
+                          }
                         }}
                       >
-                        {loading ? (
+                        {isMobile ? (
                           <>
-                            <CircularProgress size={32} />
-                            <Typography sx={{ mt: 2 }}>Memuat data...</Typography>
+                            <TableCell sx={{ width: { xs: 50, sm: 80 }, p: { xs: 1, sm: 2 } }}>
+                              <Avatar
+                                src={item.Foto ? `${API_BASE_URL}${item.Foto}` : undefined}
+                                variant="rounded"
+                                sx={{
+                                  width: { xs: 40, sm: 56 },
+                                  height: { xs: 40, sm: 56 },
+                                  bgcolor: item.Foto ? 'transparent' : '#e2e8f0'
+                                }}
+                              >
+                                {!item.Foto && <ImageIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />}
+                              </Avatar>
+                            </TableCell>
+                            <TableCell>
+                              <Stack spacing={0.5}>
+                                <Typography 
+                                  fontWeight={500}
+                                  sx={{ 
+                                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                                    lineHeight: 1.2
+                                  }}
+                                >
+                                  {item.Namabarang || "-"}
+                                </Typography>
+                                <Chip
+                                  icon={getConditionIcon(item.Kondisi)}
+                                  label={item.Kondisi}
+                                  color={getConditionColor(item.Kondisi)}
+                                  size="small"
+                                  sx={{ 
+                                    alignSelf: 'flex-start',
+                                    height: { xs: 24, sm: 32 },
+                                    '& .MuiChip-label': {
+                                      px: { xs: 1, sm: 1.5 },
+                                      fontSize: { xs: '0.75rem', sm: '0.813rem' }
+                                    }
+                                  }}
+                                />
+                              </Stack>
+                            </TableCell>
                           </>
                         ) : (
+                          // existing desktop view cells
                           <>
-                            <ImageIcon sx={{ fontSize: 48, color: "#cbd5e0", mb: 2 }} />
-                            <Typography>Tidak ada data barang</Typography>
+                            <TableCell>
+                              {item.Foto ? (
+                                <Avatar
+                                  src={`${API_BASE_URL}${item.Foto}`}
+                                  alt={item.Namabarang}
+                                  sx={{ 
+                                    width: 56, 
+                                    height: 56, 
+                                    cursor: "pointer",
+                                    '&:hover': {
+                                      opacity: 0.8,
+                                      transform: 'scale(1.05)',
+                                      transition: 'all 0.2s ease-in-out'
+                                    }
+                                  }}
+                                  onClick={() => handleImageClick(`${API_BASE_URL}${item.Foto}`)}
+                                  variant="rounded"
+                                />
+                              ) : (
+                                <Avatar
+                                  sx={{ width: 56, height: 56, bgcolor: "#e2e8f0" }}
+                                  variant="rounded"
+                                >
+                                  <ImageIcon sx={{ color: "#94a3b8" }} />
+                                </Avatar>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Typography fontWeight={500}>
+                                {item.Namabarang || "-"}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={item.Kategori || "-"} 
+                                size="small"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Typography fontWeight={500}>
+                                {item.Jumlah || "-"}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>{item.Satuan || "-"}</TableCell>
+                            <TableCell>
+                              <Chip
+                                icon={getConditionIcon(item.Kondisi)}
+                                label={item.Kondisi || "-"}
+                                color={getConditionColor(item.Kondisi)}
+                                size="small"
+                                variant="outlined"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Stack 
+                                direction="row" 
+                                spacing={1}
+                                sx={{
+                                  flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                                  gap: { xs: 1 }
+                                }}
+                              >
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={<EditIcon fontSize="small" />}
+                                  onClick={() => handleOpenEdit(item.id)}
+                                  sx={{
+                                    borderRadius: 2,
+                                    minWidth: { xs: '100%', sm: 'auto' },
+                                    mb: { xs: 1, sm: 0 }
+                                  }}
+                                >
+                                  {!isMobile && "Edit"}
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  startIcon={<DeleteIcon fontSize="small" />}
+                                  onClick={() => handleMusnahkan(item.id)}
+                                  sx={{
+                                    borderRadius: 2,
+                                    minWidth: { xs: '100%', sm: 'auto' }
+                                  }}
+                                >
+                                  {!isMobile && "Musnahkan"}
+                                </Button>
+                              </Stack>
+                            </TableCell>
                           </>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ) : currentItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                        <ImageIcon
-                          sx={{ fontSize: 48, color: "#cbd5e0", mb: 1 }}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+
+            {/* Pagination */}
+            {!loading && totalPages > 0 && (
+              <Box
+                sx={{
+                  py: 2,
+                  px: { xs: 2, sm: 0 },
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  justifyContent: 'center'
+                }}
+              >
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(e, page) => setCurrentPage(page)}
+                  size={isMobile ? 'small' : 'medium'}
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      mx: 0.5
+                    }
+                  }}
+                />
+              </Box>
+            )}
+          </Card>
+
+          {/* Dimusnahkan Items List */}
+          <Card
+            elevation={0}
+            sx={{
+              mx: { xs: 2, sm: 0 },
+              borderRadius: { xs: 2, sm: 2 },
+              bgcolor: 'white',
+              border: '1px solid',
+              borderColor: 'divider',
+              overflow: 'hidden'
+            }}
+          >
+            <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontSize: '1rem',
+                  fontWeight: 600
+                }}
+              >
+                Daftar Barang Dimusnahkan
+              </Typography>
+            </Box>
+
+            {/* Mobile List View */}
+            {isMobile ? (
+              <Stack divider={<Divider />}>
+                {currentDimusnahkanItems.map((item) => (
+                  <Box
+                    key={item.id}
+                    onClick={() => handleOpenDetail(item)}
+                    sx={{ 
+                      p: 2,
+                      cursor: 'pointer',
+                      '&:active': { bgcolor: 'action.selected' }
+                    }}
+                  >
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar
+                        src={item.Foto ? `${API_BASE_URL}${item.Foto}` : undefined}
+                        variant="rounded"
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          bgcolor: item.Foto ? 'transparent' : '#e2e8f0',
+                          opacity: 0.7 // Add opacity for dimusnahkan items
+                        }}
+                      >
+                        {!item.Foto && <ImageIcon />}
+                      </Avatar>
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography 
+                          fontWeight={500}
+                          sx={{ 
+                            fontSize: '0.9rem',
+                            mb: 0.5,
+                            textDecoration: 'line-through', // Add strikethrough for dimusnahkan items
+                            color: 'text.secondary'
+                          }}
+                        >
+                          {item.Namabarang}
+                        </Typography>
+                        <Chip
+                          icon={getConditionIcon(item.Kondisi)}
+                          label={item.Kondisi}
+                          color={getConditionColor(item.Kondisi)}
+                          size="small"
+                          sx={{ 
+                            height: 24,
+                            '& .MuiChip-label': {
+                              px: 1,
+                              fontSize: '0.75rem'
+                            }
+                          }}
                         />
-                        <Typography>Tidak ada data barang</Typography>
-                      </TableCell>
+                      </Box>
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            ) : (
+              // Desktop Table View
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: alpha(customColors.primary.lighter, 0.5) }}>
+                      {tableColumns.slice(0, -1).map((column) => ( // Remove action column
+                        <TableCell
+                          key={column.id}
+                          sx={{
+                            ...tableHeaderCellStyles,
+                            minWidth: column.minWidth
+                          }}
+                        >
+                          {column.label}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  ) : (
-                    currentItems.map((item) => (
-                      <TableRow key={item.id} hover>
+                  </TableHead>
+                  <TableBody>
+                    {currentDimusnahkanItems.map((item) => (
+                      <TableRow 
+                        key={item.id} 
+                        hover
+                        sx={{ 
+                          opacity: 0.8,
+                          bgcolor: alpha(customColors.error.lighter, 0.1)
+                        }}
+                      >
                         <TableCell>
                           {item.Foto ? (
                             <Avatar
                               src={`${API_BASE_URL}${item.Foto}`}
                               alt={item.Namabarang}
-                              sx={{ width: 56, height: 56, cursor: "pointer" }}
-                              onClick={() =>
-                                handleImageClick(`${API_BASE_URL}${item.Foto}`)
-                              }
+                              sx={{ 
+                                width: 56, 
+                                height: 56,
+                                cursor: "pointer",
+                                opacity: 0.7,
+                                '&:hover': {
+                                  opacity: 1,
+                                  transform: 'scale(1.05)',
+                                  transition: 'all 0.2s ease-in-out'
+                                }
+                              }}
+                              onClick={() => handleImageClick(`${API_BASE_URL}${item.Foto}`)}
                               variant="rounded"
                             />
                           ) : (
@@ -853,12 +1131,19 @@ export default function DataBarang() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Typography fontWeight={500}>
+                          <Typography 
+                            fontWeight={500}
+                            sx={{ textDecoration: 'line-through' }}
+                          >
                             {item.Namabarang || "-"}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Chip label={item.Kategori || "-"} size="small" />
+                          <Chip 
+                            label={item.Kategori || "-"} 
+                            size="small"
+                            sx={{ opacity: 0.7 }}
+                          />
                         </TableCell>
                         <TableCell>
                           <Typography fontWeight={500}>
@@ -875,287 +1160,424 @@ export default function DataBarang() {
                             variant="outlined"
                           />
                         </TableCell>
-                        <TableCell>
-                          <Stack 
-                            direction="row" 
-                            spacing={1}
-                            sx={{
-                              flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                              gap: { xs: 1 }
-                            }}
-                          >
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<EditIcon fontSize="small" />}
-                              onClick={() => handleOpenEdit(item.id)}
-                              sx={{
-                                borderRadius: 2,
-                                minWidth: { xs: '100%', sm: 'auto' },
-                                mb: { xs: 1, sm: 0 }
-                              }}
-                            >
-                              {!isMobile && "Edit"}
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="error"
-                              startIcon={<DeleteIcon fontSize="small" />}
-                              onClick={() => handleMusnahkan(item.id)}
-                              sx={{
-                                borderRadius: 2,
-                                minWidth: { xs: '100%', sm: 'auto' }
-                              }}
-                            >
-                              {!isMobile && "Musnahkan"}
-                            </Button>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            {/* Pagination */}
-            {!loading && totalPages > 0 && (
-              <TablePaginationStyled
-                count={totalPages}
-                page={currentPage}
-                onChange={(e, page) => setCurrentPage(page)}
-              />
-            )}
-          </Card>
-
-          {/* Destroyed Items Table */}
-          {barang?.some((item) => item.Kondisi === "Dimusnahkan") && (
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: "divider",
-                bgcolor: alpha(customColors.error.main, 0.02),
-              }}
-            >
-              <Box
-                sx={{
-                  p: 2.5,
-                  borderBottom: 1,
-                  borderColor: "divider",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                <WarningIcon color="error" sx={{ fontSize: 20 }} />
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: { xs: "1.1rem", sm: "1.2rem" },
-                    color: customColors.error.dark,
-                  }}
-                >
-                  Barang Dimusnahkan
-                </Typography>
-              </Box>
-
-              <TableContainer
-                sx={{
-                  overflowX: "auto",
-                  "& table": {
-                    minWidth: { xs: 650, md: 800 },
-                  },
-                  "& td, & th": {
-                    px: { xs: 1, sm: 2 },
-                    py: { xs: 1.5, sm: 2 },
-                    whiteSpace: "nowrap",
-                  },
-                }}
-              >
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: "#f8fafc" }}>
-                      <TableCell sx={{ fontWeight: 600, color: "#4a5568" }}>
-                        Foto
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "#4a5568" }}>
-                        Nama Barang
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "#4a5568" }}>
-                        Kategori
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "#4a5568" }}>
-                        Jumlah
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "#4a5568" }}>
-                        Satuan
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "#4a5568" }}>
-                        Kondisi
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {currentDimusnahkanItems.map((item) => (
-                      <TableRow key={item.id} sx={{ opacity: 0.7 }}>
-                        <TableCell>
-                          {item.Foto ? (
-                            <Avatar
-                              src={`${API_BASE_URL}${item.Foto}`}
-                              alt={item.Namabarang}
-                              sx={{ width: 56, height: 56, cursor: "pointer" }}
-                              onClick={() =>
-                                handleImageClick(`${API_BASE_URL}${item.Foto}`)
-                              }
-                              variant="rounded"
-                            />
-                          ) : (
-                            <Avatar
-                              sx={{ width: 56, height: 56, bgcolor: "#e2e8f0" }}
-                              variant="rounded"
-                            >
-                              <ImageIcon sx={{ color: "#94a3b8" }} />
-                            </Avatar>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Typography fontWeight={500}>
-                            {item.Namabarang || "-"}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={item.Kategori || "-"} size="small" />
-                        </TableCell>
-                        <TableCell>
-                          <Typography fontWeight={500}>
-                            {item.Jumlah || "-"}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{item.Satuan || "-"}</TableCell>
-                        <TableCell>
-                          <Chip
-                            icon={getConditionIcon(item.Kondisi)}
-                            label={item.Kondisi || "-"}
-                            color={getConditionColor(item.Kondisi)}
-                            size="small"
-                          />
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </TableContainer>
+            )}
 
-              {/* Pagination Dimusnahkan */}
-              {!loading && totalDimusnahkanPages > 0 && (
-                <TablePaginationStyled
+            {/* Pagination for Dimusnahkan Items */}
+            {!loading && totalDimusnahkanPages > 0 && (
+              <Box
+                sx={{
+                  py: 2,
+                  px: { xs: 2, sm: 0 },
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  justifyContent: 'center'
+                }}
+              >
+                <Pagination
                   count={totalDimusnahkanPages}
                   page={dimusnahkanPage}
                   onChange={(e, page) => setDimusnahkanPage(page)}
-                />
-              )}
-            </Card>
-          )}
-
-          <Dialog
-            open={openPopup}
-            onClose={handleClosePopup}
-            maxWidth="md"
-            fullWidth
-            sx={imageDialogStyles}
-          >
-            <DialogContent>
-              {selectedImage && (
-                <img
-                  src={selectedImage}
-                  alt="Gambar diperbesar"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    maxHeight: "80vh",
-                    objectFit: "contain",
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/fallback-image.png";
+                  size={isMobile ? 'small' : 'medium'}
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      mx: 0.5
+                    }
                   }}
                 />
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleClosePopup} color="primary">
-                Tutup
-              </Button>
-            </DialogActions>
-          </Dialog>
+              </Box>
+            )}
+          </Card>
+        </Stack>
 
-          <Dialog
-            open={openFormDialog}
-            onClose={() => setOpenFormDialog(false)}
-            maxWidth="sm"
-            fullWidth
-            sx={formDialogStyles}
-          >
-            <DialogTitle>
-              {isEditMode ? "Form Edit Barang" : "Form Tambah Barang"}
-            </DialogTitle>
-            <DialogContent>
-              <Box component="form" sx={{ mt: 2 }} onSubmit={handleSubmit}>
+        {/* Image Preview Dialog */}
+        <Dialog
+          open={openPopup}
+          onClose={handleClosePopup}
+          maxWidth="md"
+          fullWidth
+          sx={{
+            '& .MuiDialog-paper': {
+              width: { xs: '100%', sm: '90%', md: '80%' },
+              m: { xs: 0, sm: 2 },
+              borderRadius: { xs: 0, sm: 2 },
+              overflow: 'hidden'
+            }
+          }}
+        >
+          <Box sx={{ 
+    display: 'flex', 
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    p: 2,
+    borderBottom: '1px solid',
+    borderColor: 'divider'
+  }}>
+    <Typography 
+      component="div" 
+      sx={{ 
+        fontSize: '1.125rem',
+        fontWeight: 600 
+      }}
+    >
+      Preview Gambar
+    </Typography>
+    <IconButton onClick={handleClosePopup} size="small">
+      <CloseIcon />
+    </IconButton>
+  </Box>
+  <DialogContent sx={{ p: 0 }}>
+    <Box
+      component="img"
+      src={selectedImage}
+      alt="Preview"
+      sx={{
+        width: '100%',
+        height: 'auto',
+        maxHeight: '80vh',
+        objectFit: 'contain'
+      }}
+    />
+  </DialogContent>
+        </Dialog>
+
+        {/* Detail Dialog - Mobile */}
+        <Dialog
+          open={openDetailDialog}
+          onClose={() => setOpenDetailDialog(false)}
+          fullScreen={isMobile}
+          TransitionComponent={SlideTransition}
+          PaperProps={{
+            sx: {
+              m: isMobile ? 0 : 2,
+              width: { sm: '600px', md: '800px' },
+              height: isMobile ? '100%' : 'auto',
+              maxHeight: { sm: '85vh' },
+              borderRadius: { xs: 0, sm: 2 }
+            }
+          }}
+        >
+          <Box sx={{ bgcolor: 'background.paper', height: '100%' }}>
+            <Box sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ 
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        mb: 3
+      }}>
+        <Typography 
+          component="div" 
+          sx={{ 
+            fontSize: '1.125rem',
+            fontWeight: 600 
+          }}
+        >
+          Detail Barang
+        </Typography>
+        <IconButton
+          onClick={() => setOpenDetailDialog(false)}
+          size="small"
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+              
+              {selectedBarang && (
+                <Stack spacing={2.5}>
+                  <Box>
+                    <Typography 
+                      variant="subtitle2" 
+                      sx={{ mb: 1, color: 'text.secondary' }}
+                    >
+                      Foto Barang
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: 200,
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        overflow: 'hidden',
+                        bgcolor: 'background.neutral',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {selectedBarang.Foto ? (
+                        <Box
+                          component="img"
+                          src={`${API_BASE_URL}${selectedBarang.Foto}`}
+                          alt={selectedBarang.Namabarang}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain'
+                          }}
+                          onClick={() => handleImageClick(`${API_BASE_URL}${selectedBarang.Foto}`)}
+                        />
+                      ) : (
+                        <Box sx={{ textAlign: 'center', p: 2 }}>
+                          <ImageIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                          <Typography variant="body2" color="text.secondary">
+                            Tidak ada foto
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                      Nama Barang
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {selectedBarang.Namabarang}
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                      Kategori
+                    </Typography>
+                    <Chip 
+                      label={selectedBarang.Kategori} 
+                      size="small"
+                      sx={{ 
+                        borderRadius: 1,
+                        bgcolor: 'background.neutral'
+                      }}
+                    />
+                  </Box>
+
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <Box flex={1}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                        Jumlah
+                      </Typography>
+                      <Typography variant="body1">
+                        {selectedBarang.Jumlah}
+                      </Typography>
+                    </Box>
+                    <Box flex={1}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                        Satuan
+                      </Typography>
+                      <Typography variant="body1">
+                        {selectedBarang.Satuan}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                      Kondisi
+                    </Typography>
+                    <Chip
+                      icon={getConditionIcon(selectedBarang.Kondisi)}
+                      label={selectedBarang.Kondisi}
+                      color={getConditionColor(selectedBarang.Kondisi)}
+                      size="small"
+                      sx={{ 
+                        borderRadius: 1,
+                        '& .MuiChip-icon': { ml: 1 }
+                      }}
+                    />
+                  </Box>
+
+                  {selectedBarang.Kondisi !== 'Dimusnahkan' && (
+                    <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => {
+                          handleMusnahkan(selectedBarang.id);
+                          setOpenDetailDialog(false);
+                        }}
+                      >
+                        Musnahkan
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<EditIcon />}
+                        onClick={() => {
+                          handleOpenEdit(selectedBarang.id);
+                          setOpenDetailDialog(false);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </Box>
+                  )}
+                </Stack>
+              )}
+            </Box>
+          </Box>
+        </Dialog>
+
+        {/* Form Dialog */}
+        <Dialog
+          open={openFormDialog}
+          onClose={() => {
+            setOpenFormDialog(false);
+            setFormErrors({});
+          }}
+          maxWidth="sm"
+          fullWidth
+          TransitionComponent={SlideTransition}
+        >
+          <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ 
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      mb: 3
+    }}>
+      <Typography 
+        component="div" 
+        sx={{ 
+          fontSize: '1.125rem',
+          fontWeight: 600 
+        }}
+      >
+        {isEditMode ? "Edit Barang" : "Tambah Barang"}
+      </Typography>
+      <IconButton
+        onClick={() => {
+          setOpenFormDialog(false);
+          setFormErrors({});
+        }}
+        size="small"
+      >
+        <CloseIcon />
+      </IconButton>
+    </Box>
+
+            <form onSubmit={handleSubmit}>
+              <Stack spacing={2.5}>
+                <Box>
+                  <Typography 
+                    variant="subtitle2" 
+                    sx={{ mb: 1, color: 'text.secondary' }}
+                  >
+                    Foto Barang
+                  </Typography>
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 200,
+                      borderRadius: 1,
+                      border: '1px dashed',
+                      borderColor: 'divider',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      bgcolor: 'background.neutral'
+                    }}
+                  >
+                    {previewImage ? (
+                      <Box
+                        component="img"
+                        src={previewImage}
+                        alt="Preview"
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain'
+                        }}
+                      />
+                    ) : (
+                      <Box sx={{ textAlign: 'center', p: 2 }}>
+                        <ImageIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          Klik untuk pilih foto
+                        </Typography>
+                      </Box>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </Box>
+                  {formErrors.Foto && (
+                    <Typography color="error" variant="caption">
+                      {formErrors.Foto}
+                    </Typography>
+                  )}
+                </Box>
+
                 <TextField
-                  label="Namabarang"
+                  label="Nama Barang"
                   name="Namabarang"
                   value={formData.Namabarang}
                   onChange={handleChange}
+                  error={Boolean(formErrors.Namabarang)}
+                  helperText={formErrors.Namabarang}
                   fullWidth
                   required
-                  error={!!formErrors.Namabarang}
-                  helperText={formErrors.Namabarang}
-                  sx={formFieldStyles}
                 />
+
                 <TextField
                   label="Kategori"
                   name="Kategori"
                   value={formData.Kategori}
                   onChange={handleChange}
-                  fullWidth
-                  required
-                  error={!!formErrors.Kategori}
+                  error={Boolean(formErrors.Kategori)}
                   helperText={formErrors.Kategori}
-                  sx={formFieldStyles}
-                />
-                <TextField
-                  label="Jumlah"
-                  name="Jumlah"
-                  type="number"
-                  value={formData.Jumlah}
-                  onChange={handleChange}
                   fullWidth
                   required
-                  inputProps={{ min: 1 }}
-                  error={!!formErrors.Jumlah}
-                  helperText={formErrors.Jumlah}
-                  sx={formFieldStyles}
                 />
-                <TextField
-                  label="Satuan"
-                  name="Satuan"
-                  value={formData.Satuan}
-                  onChange={handleChange}
-                  fullWidth
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <TextField
+                    label="Jumlah"
+                    name="Jumlah"
+                    type="number"
+                    value={formData.Jumlah}
+                    onChange={handleChange}
+                    error={Boolean(formErrors.Jumlah)}
+                    helperText={formErrors.Jumlah}
+                    fullWidth
+                    required
+                  />
+
+                  <TextField
+                    label="Satuan"
+                    name="Satuan"
+                    value={formData.Satuan}
+                    onChange={handleChange}
+                    error={Boolean(formErrors.Satuan)}
+                    helperText={formErrors.Satuan}
+                    fullWidth
+                    required
+                  />
+                </Stack>
+
+                <FormControl 
+                  fullWidth 
+                  error={Boolean(formErrors.Kondisi)}
                   required
-                  error={!!formErrors.Satuan}
-                  helperText={formErrors.Satuan}
-                  sx={formFieldStyles}
-                />
-                <FormControl
-                  fullWidth
-                  required
-                  error={!!formErrors.Kondisi}
-                  sx={formFieldStyles}
                 >
                   <InputLabel>Kondisi</InputLabel>
                   <Select
@@ -1169,54 +1591,35 @@ export default function DataBarang() {
                     <MenuItem value="Rusak Berat">Rusak Berat</MenuItem>
                   </Select>
                   {formErrors.Kondisi && (
-                    <Typography color="error">{formErrors.Kondisi}</Typography>
+                    <Typography color="error" variant="caption">
+                      {formErrors.Kondisi}
+                    </Typography>
                   )}
                 </FormControl>
-                <TextField
-                  type="file"
-                  label="Foto"
-                  name="Foto"
-                  onChange={handleFileChange}
-                  fullWidth
-                  inputProps={{ accept: "image/jpeg,image/png" }}
-                  InputLabelProps={{ shrink: true }}
-                  error={!!formErrors.Foto}
-                  helperText={formErrors.Foto}
-                  sx={formFieldStyles}
-                />
-                {previewImage && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2">Pratinjau Gambar:</Typography>
-                    <img
-                      src={previewImage}
-                      alt="Pratinjau"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "150px",
-                        objectFit: "contain",
-                      }}
-                    />
-                  </Box>
-                )}
-                <DialogActions>
+
+                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                   <Button
-                    onClick={() => setOpenFormDialog(false)}
-                    sx={{ borderRadius: 2 }}
+                    variant="outlined"
+                    onClick={() => {
+                      setOpenFormDialog(false);
+                      setFormErrors({});
+                    }}
+                    fullWidth
                   >
                     Batal
                   </Button>
-                  <Button
-                    type="submit"
+                  <Button 
+                    type="submit" 
                     variant="contained"
-                    sx={{ borderRadius: 2 }}
+                    fullWidth
                   >
-                    Simpan
+                    {isEditMode ? "Simpan" : "Tambah"}
                   </Button>
-                </DialogActions>
-              </Box>
-            </DialogContent>
-          </Dialog>
-        </Stack>
+                </Box>
+              </Stack>
+            </form>
+          </Box>
+        </Dialog>
       </Box>
     </ProtectedRoute>
   );

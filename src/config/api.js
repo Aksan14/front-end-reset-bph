@@ -1,5 +1,5 @@
 // src/config/api.js
-export const API_BASE_URL = "http://localhost:8080/";
+export const API_BASE_URL = "https://backend-inventaris-production.up.railway.app/";
 
 export const endpoints = {
   // Admin endpoints
