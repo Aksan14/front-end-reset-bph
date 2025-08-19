@@ -268,12 +268,16 @@ export default function DataBarang() {
   const itemsPerPage = 10;
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
 
+  // Tambahkan state untuk menyimpan data asli
+  const [originalBarang, setOriginalBarang] = useState([]);
+
   const fetchBarang = async () => {
     try {
       setLoading(true);
       const result = await barangService.getAll();
       if (result.success) {
         setBarang(result.data);
+        setOriginalBarang(result.data); // Simpan data asli
         setSnackbar({
           open: true,
           message: "Data barang berhasil dimuat",
@@ -281,6 +285,7 @@ export default function DataBarang() {
         });
       } else {
         setBarang([]);
+        setOriginalBarang([]); // Reset data asli juga
         setSnackbar({
           open: true,
           message: result.message || "Gagal mengambil data barang",
@@ -290,6 +295,7 @@ export default function DataBarang() {
     } catch (error) {
       console.error("Error fetching barang:", error);
       setBarang([]);
+      setOriginalBarang([]); // Reset data asli juga
       setSnackbar({
         open: true,
         message: "Terjadi kesalahan saat mengambil data",
@@ -314,14 +320,14 @@ export default function DataBarang() {
     setSearchQuery(value);
     try {
       if (value.trim() === '') {
-        fetchBarang();
+        setBarang(originalBarang); // Kembalikan ke data asli
         return;
       }
-      const filtered = barang.filter(item => 
+      const filtered = originalBarang.filter(item => 
         item.Namabarang.toLowerCase().includes(value.toLowerCase()) ||
         item.Kategori.toLowerCase().includes(value.toLowerCase())
       );
-      setBarang(filtered); // Use setBarang instead of undefined setCurrentItems
+      setBarang(filtered);
     } catch (error) {
       console.error("Error searching:", error);
       setSnackbar({
@@ -655,17 +661,11 @@ export default function DataBarang() {
                 size="small"
                 placeholder="Cari barang..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)} // Langsung panggil handleSearch
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <IconButton 
-                        onClick={() => handleSearch(searchQuery)}
-                        edge="start"
-                        size="small"
-                      >
-                        <SearchIcon sx={{ color: 'text.secondary' }} />
-                      </IconButton>
+                      <SearchIcon sx={{ color: 'text.secondary' }} />
                     </InputAdornment>
                   )
                 }}

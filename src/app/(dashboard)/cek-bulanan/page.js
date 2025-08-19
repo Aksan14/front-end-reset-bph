@@ -32,6 +32,7 @@ import {
   Divider,
   Chip,
   Tooltip,
+  InputAdornment,
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -39,6 +40,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { jsPDF } from "jspdf";
 import { barangService } from "@/services/barangService";
 import {
@@ -79,6 +81,9 @@ export default function PengecekanPage() {
   const [openCheckDialog, setOpenCheckDialog] = useState(false);
   const [openWorkspaceDialog, setOpenWorkspaceDialog] = useState(false);
 
+  // Update state untuk menyimpan data asli
+  const [originalBarangList, setOriginalBarangList] = useState([]);
+
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
@@ -106,25 +111,49 @@ export default function PengecekanPage() {
     try {
       setLoading(true);
       const result = await barangService.getAll();
-      console.log("Fetched barang tersedia:", result.data); // Log debug
       if (result.success) {
-        const tersedia = result.data.filter(
+        const filteredBarang = result.data.filter(
           (item) => item.Kondisi !== "Dimusnahkan"
         );
-        setBarangList(tersedia);
+        setBarangList(filteredBarang);
+        setOriginalBarangList(filteredBarang); // Simpan data asli
         setMessage("Data barang tersedia berhasil dimuat");
         setSnackbarOpen(true);
       } else {
         setBarangList([]);
+        setOriginalBarangList([]); // Reset data asli
         setError(result.message || "Gagal mengambil data barang tersedia");
       }
     } catch (error) {
       console.error("Error fetching barang tersedia:", error);
       setBarangList([]);
+      setOriginalBarangList([]); // Reset data asli
       setError(error.message || "Terjadi kesalahan saat mengambil data barang");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Hapus fungsi handleSearch karena akan diganti dengan handleSearchChange
+  // Perbarui fungsi handleSearchChange
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
+
+    if (!value.trim()) {
+      // Jika pencarian kosong, kembalikan ke data asli
+      setBarangList(originalBarangList);
+      updateBarangTable(originalBarangList); // Update tabel barang
+      return;
+    }
+
+    // Filter data secara lokal
+    const filtered = originalBarangList.filter((item) =>
+      item.Namabarang?.toLowerCase().includes(value.toLowerCase()) ||
+      item.Kategori?.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setBarangList(filtered);
+    updateBarangTable(filtered); // Update tabel barang dengan hasil filter
   };
 
   const handleSearch = async () => {
@@ -923,11 +952,33 @@ export default function PengecekanPage() {
                     label="Cari Barang"
                     variant="outlined"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     sx={{ flexGrow: 1 }}
                     size="small"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ color: 'text.secondary' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: searchQuery && (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => {
+                              setSearchQuery('');
+                              setBarangList(originalBarangList);
+                              updateBarangTable(originalBarangList);
+                            }}
+                            edge="end"
+                            size="small"
+                          >
+                            <RefreshIcon />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
                   />
-                  <Button
+                  {/* <Button
                     variant="contained"
                     onClick={handleSearch}
                     startIcon={<SearchIcon />}
@@ -940,9 +991,10 @@ export default function PengecekanPage() {
                       setSearchQuery("");
                       fetchBarangTersedia();
                     }}
+                    startIcon={<RefreshIcon />}
                   >
-                    Reset Pencarian
-                  </Button>
+                    Reset
+                  </Button> */}
                 </Box>
 
                 <TableContainer
@@ -1001,10 +1053,11 @@ export default function PengecekanPage() {
                               {item.image_url ? (
                                 <Image
                                   src={item.image_url}
-                                  alt={item.nama_barang}
+                                  alt={item.nama || 'Gambar barang'} // Tambahkan alt text
                                   width={64}
                                   height={64}
                                   style={{ objectFit: "cover" }}
+                                  priority={true}
                                 />
                               ) : (
                                 <Avatar
@@ -1017,7 +1070,7 @@ export default function PengecekanPage() {
                                   }}
                                   onClick={() => handleViewItem(item)}
                                 >
-                                  {item.nama.charAt(0)}
+                                  {item.nama?.charAt(0) || '?'}
                                 </Avatar>
                               )}
                             </TableCell>

@@ -45,6 +45,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ImageIcon from "@mui/icons-material/Image";
+import CloseIcon from "@mui/icons-material/Close";
 import { jsPDF } from "jspdf";
 import { barangService } from "@/services/barangService";
 import {
@@ -67,6 +68,7 @@ export default function PeminjamanContent() {
   const [error, setError] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [originalBarangList, setOriginalBarangList] = useState([]);
 
   // State untuk menu aksi mobile
   const [anchorEl, setAnchorEl] = useState(null);
@@ -96,7 +98,7 @@ export default function PeminjamanContent() {
 
   // State untuk pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = isMobile ? 6 : isTablet ? 9 : 12;
+  const itemsPerPage = isMobile ? 6 : isTablet ? 9 : 10;
 
   // Handle menu aksi mobile
   const handleMenuOpen = (event, peminjaman) => {
@@ -129,19 +131,21 @@ export default function PeminjamanContent() {
       setLoading(true);
       const result = await barangService.getAll();
       if (result.success) {
-        setBarangList(
-          result.data.filter((item) => item.Kondisi !== "Dimusnahkan")
-        );
+        const filteredBarang = result.data.filter((item) => item.Kondisi !== "Dimusnahkan");
+        setBarangList(filteredBarang);
+        setOriginalBarangList(filteredBarang); // Simpan data asli
         setMessage("Data barang berhasil dimuat");
         setSnackbarOpen(true);
       } else {
         setBarangList([]);
+        setOriginalBarangList([]); // Reset data asli
         setError(result.message || "Gagal mengambil data barang");
         setSnackbarOpen(true);
       }
     } catch (error) {
       console.error("Error:", error);
       setBarangList([]);
+      setOriginalBarangList([]); // Reset data asli
       setError(error.message || "Terjadi kesalahan");
       setSnackbarOpen(true);
     } finally {
@@ -150,30 +154,25 @@ export default function PeminjamanContent() {
   };
 
   // Handle pencarian
-  const handleSearch = async () => {
-    try {
-      setLoading(true);
-      const result = await barangService.search(searchQuery);
-      if (result.success) {
-        setBarangList(
-          result.data.filter((item) => item.Kondisi !== "Dimusnahkan")
-        );
-        setCurrentPage(1);
-        setMessage("Pencarian berhasil");
-        setSnackbarOpen(true);
-      } else {
-        setBarangList([]);
-        setError(result.message || "Pencarian gagal");
-        setSnackbarOpen(true);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      setBarangList([]);
-      setError("Terjadi kesalahan saat mencari");
-      setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (!value.trim()) {
+      // Jika search kosong, kembalikan ke data asli
+      setBarangList(originalBarangList);
+      setCurrentPage(1);
+      return;
     }
+
+    // Filter data secara lokal
+    const filtered = originalBarangList.filter((item) =>
+      item.Namabarang.toLowerCase().includes(value.toLowerCase()) ||
+      item.Kategori?.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setBarangList(filtered);
+    setCurrentPage(1);
   };
 
   // Handle key press for search
@@ -218,7 +217,7 @@ export default function PeminjamanContent() {
       ...formData,
       barang_id: barang.id,
     });
-    setSelectedBarang(barang);
+    setSelectedBarang(barang); // Fixed the function name
     setOpenFormDialog(true);
   };
 
@@ -381,18 +380,11 @@ export default function PeminjamanContent() {
               size="small"
               placeholder="Cari barang..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={handleSearchChange}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <IconButton
-                      onClick={handleSearch}
-                      edge="start"
-                      size="small"
-                    >
-                      <SearchIcon sx={{ color: "text.secondary" }} />
-                    </IconButton>
+                    <SearchIcon sx={{ color: "text.secondary" }} />
                   </InputAdornment>
                 ),
                 endAdornment: searchQuery && (
@@ -400,7 +392,8 @@ export default function PeminjamanContent() {
                     <IconButton
                       onClick={() => {
                         setSearchQuery("");
-                        fetchBarangTersedia();
+                        setBarangList(originalBarangList);
+                        setCurrentPage(1);
                       }}
                       edge="end"
                       size="small"
@@ -445,117 +438,148 @@ export default function PeminjamanContent() {
                 <CircularProgress />
               </Box>
             ) : (
-              <Grid container spacing={isMobile ? 1 : 2}>
+              <Grid 
+                container 
+                spacing={isMobile ? 2 : 2}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr', // 1 column for mobile
+                    sm: 'repeat(3, 1fr)', // 3 columns for tablet
+                    md: 'repeat(4, 1fr)', // 4 columns for desktop
+                    lg: 'repeat(5, 1fr)', // 5 columns for large screens
+                  },
+                  gap: { xs: 2, sm: 2 },
+                }}
+              >
                 {currentItems.map((barang) => (
-                  <Grid
-                    item
-                    xs={6}
-                    sm={4}
-                    md={3}
-                    lg={2.4}
+                  <Card
                     key={barang.id}
-                    sx={{ display: "flex" }}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'scale(1.02)' },
+                      cursor: 'pointer',
+                      height: '100%',
+                    }}
+                    onClick={() => handleSelectBarang(barang)}
                   >
-                    <Card
+                    <Box
                       sx={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        transition: "transform 0.2s",
-                        "&:hover": { transform: "scale(1.02)" },
-                        cursor: "pointer",
+                        position: 'relative',
+                        width: '100%',
+                        height: {
+                          xs: '280px', // Taller for mobile
+                          sm: '240px', // Taller for tablet
+                          md: '260px', // Taller for desktop
+                          lg: '280px'  // Taller for large screens
+                        },
+                        bgcolor: 'background.neutral',
                       }}
-                      onClick={() => handleSelectBarang(barang)}
                     >
-                      <Box
+                      <Avatar
+                        src={barang.Foto ? `${API_BASE_URL}${barang.Foto}` : undefined}
+                        variant="square"
                         sx={{
-                          position: "relative",
-                          pt: "75%",
-                          bgcolor: "background.neutral",
-                        }}
-                      >
-                        <Avatar
-                          src={
-                            barang.Foto
-                              ? `${API_BASE_URL}${barang.Foto}`
-                              : undefined
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          bgcolor: barang.Foto ? 'transparent' : '#e2e8f0',
+                          '& img': {
+                            objectFit: 'contain',
+                            width: '100%',
+                            height: '100%',
+                            padding: '12px', // Slightly larger padding
                           }
-                          variant="square"
-                          sx={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            bgcolor: barang.Foto ? "transparent" : "#e2e8f0",
-                          }}
-                        >
-                          {!barang.Foto && (
-                            <ImageIcon sx={{ fontSize: isMobile ? 32 : 40 }} />
-                          )}
-                        </Avatar>
-                      </Box>
-                      <CardContent
-                        sx={{
-                          p: isMobile ? 1 : 2,
-                          flexGrow: 1,
-                          display: "flex",
-                          flexDirection: "column",
                         }}
                       >
-                        <Typography
-                          sx={{
-                            fontSize: isMobile ? "0.875rem" : "1rem",
-                            fontWeight: 500,
-                            mb: 0.5,
-                            lineHeight: 1.2,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {barang.Namabarang}
-                        </Typography>
-                        <Box sx={{ mt: "auto" }}>
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="center"
-                            justifyContent="space-between"
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                color: "text.secondary",
-                                fontSize: isMobile ? "0.75rem" : "0.813rem",
-                              }}
-                            >
-                              {barang.Jumlah} {barang.Satuan}
-                            </Typography>
-                            <Chip
-                              label={barang.Kondisi}
-                              size={isMobile ? "small" : "medium"}
-                              color={
-                                barang.Kondisi === "Baik"
-                                  ? "success"
-                                  : "warning"
+                        {!barang.Foto && (
+                          <ImageIcon 
+                            sx={{ 
+                              fontSize: {
+                                xs: 64, // Larger icon for mobile
+                                sm: 56, // Larger icon for tablet
+                                md: 64  // Larger icon for desktop
                               }
-                              sx={{
-                                height: isMobile ? 22 : 24,
-                                "& .MuiChip-label": {
-                                  px: 1,
-                                  fontSize: isMobile ? "0.6875rem" : "0.75rem",
+                            }} 
+                          />
+                        )}
+                      </Avatar>
+                    </Box>
+                    <CardContent
+                      sx={{
+                        p: { xs: 2, sm: 2 },
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: {
+                            xs: '1rem', // Larger font for mobile
+                            sm: '0.9rem',
+                            md: '1rem',
+                          },
+                          fontWeight: 500,
+                          mb: 1,
+                          lineHeight: 1.3,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          height: {
+                            xs: 'auto', // Auto height for mobile
+                            sm: '2.6em',
+                          },
+                        }}
+                      >
+                        {barang.Namabarang}
+                      </Typography>
+                      <Box sx={{ mt: 'auto' }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          justifyContent="space-between"
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: 'text.secondary',
+                              fontSize: {
+                                xs: '0.875rem', // Larger font for mobile
+                                sm: '0.813rem',
+                                md: '0.875rem',
+                              },
+                            }}
+                          >
+                            {barang.Jumlah} {barang.Satuan}
+                          </Typography>
+                          <Chip
+                            label={barang.Kondisi}
+                            size={isMobile ? "medium" : "small"}
+                            color={barang.Kondisi === "Baik" ? "success" : "warning"}
+                            sx={{
+                              height: { xs: 28, sm: 24 }, // Larger chip for mobile
+                              '& .MuiChip-label': {
+                                px: 1.5,
+                                fontSize: {
+                                  xs: '0.875rem', // Larger font for mobile
+                                  sm: '0.75rem',
+                                  md: '0.8125rem',
                                 },
-                              }}
-                            />
-                          </Stack>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                              },
+                            }}
+                          />
+                        </Stack>
+                      </Box>
+                    </CardContent>
+                  </Card>
                 ))}
               </Grid>
             )}
@@ -784,212 +808,398 @@ export default function PeminjamanContent() {
         fullScreen={isMobile}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 3,
+            backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))',
+            backdropFilter: 'blur(10px)',
+            overflow: 'hidden'
+          }
+        }}
       >
+        {/* Dialog Header */}
         <DialogTitle
           sx={{
-            py: isMobile ? 1 : 2,
-            fontSize: isMobile ? "1.1rem" : "1.25rem",
-            fontWeight: 600,
+            p: 3,
+            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+            color: 'white',
+            fontSize: { xs: '1.25rem', sm: '1.5rem' },
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
           }}
         >
-          Form Peminjaman
+          <Box 
+            component="span" 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: 1,
+              flex: 1 
+            }}
+          >
+            Form Peminjaman Barang
+          </Box>
+          {isMobile && (
+            <IconButton
+              onClick={() => setOpenFormDialog(false)}
+              sx={{ color: 'white' }}
+              size="small"
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
         </DialogTitle>
-        <DialogContent dividers sx={{ pt: isMobile ? 1 : 2 }}>
+
+        {/* Dialog Content */}
+        <DialogContent 
+          sx={{ 
+            p: { xs: 2, sm: 3 },
+            bgcolor: 'background.default' 
+          }}
+        >
           {selectedBarang && (
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
+              {/* Left Side - Item Details with Larger Image */}
               <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Detail Barang
-                </Typography>
-                <Stack spacing={1}>
-                  <Typography>
-                    <strong>Nama:</strong> {selectedBarang.Namabarang}
-                  </Typography>
-                  <Typography>
-                    <strong>Jumlah:</strong> {selectedBarang.Jumlah}{" "}
-                    {selectedBarang.Satuan}
-                  </Typography>
-                  <Typography>
-                    <strong>Kondisi:</strong> {selectedBarang.Kondisi}
-                  </Typography>
-                  <Typography>
-                    <strong>Keterangan:</strong>{" "}
-                    {selectedBarang.Keterangan || "-"}
-                  </Typography>
-                </Stack>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: { xs: 2, sm: 3 },
+                    height: '100%',
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  {/* Large Image Container */}
+                  <Box sx={{ 
+                    position: 'relative',
+                    width: '100%',
+                    height: { 
+                      xs: '340px', // Larger for mobile
+                      sm: '380px', // Larger for tablet
+                      md: '420px', // Larger for desktop
+                      lg: '460px'  // Larger for large screens
+                    },
+                    mb: 3,
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    bgcolor: 'background.neutral',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}>
+                    <Avatar
+                      src={selectedBarang.Foto ? `${API_BASE_URL}${selectedBarang.Foto}` : undefined}
+                      variant="square"
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        '& img': {
+                          objectFit: 'contain',
+                          p: 3 // Larger padding in dialog
+                        }
+                      }}
+                    >
+                      <ImageIcon sx={{ fontSize: 80 }} /> {/* Larger placeholder icon */}
+                    </Avatar>
+                  </Box>
+
+                  {/* Item Details in Grid for better mobile layout */}
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Nama Barang
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {selectedBarang.Namabarang}
+                      </Typography>
+                    </Grid>
+                    
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Kategori
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {selectedBarang.Kategori || '-'}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Jumlah Tersedia
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {selectedBarang.Jumlah} {selectedBarang.Satuan}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Kondisi
+                      </Typography>
+                      <Chip 
+                        label={selectedBarang.Kondisi}
+                        color={selectedBarang.Kondisi === "Baik" ? "success" : "warning"}
+                        size="small"
+                        sx={{ mt: 0.5 }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
               </Grid>
+
+              {/* Right Side - Form with better spacing for mobile */}
               <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Data Peminjaman
-                </Typography>
-                <Stack spacing={2}>
-                  <TextField
-                    label="Nama Peminjam"
-                    variant="outlined"
-                    name="nama_peminjam"
-                    value={formData.nama_peminjam}
-                    onChange={handleChange}
-                    size={isMobile ? "small" : "medium"}
-                    fullWidth
-                    required
-                  />
-                  <TextField
-                    label="Tanggal Pinjam"
-                    variant="outlined"
-                    name="tanggal_pinjam"
-                    type="date"
-                    value={formData.tanggal_pinjam}
-                    onChange={handleChange}
-                    size={isMobile ? "small" : "medium"}
-                    fullWidth
-                    required
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
-                  <TextField
-                    label="Rencana Kembali"
-                    variant="outlined"
-                    name="rencana_kembali"
-                    type="date"
-                    value={formData.rencana_kembali}
-                    onChange={handleChange}
-                    size={isMobile ? "small" : "medium"}
-                    fullWidth
-                    required
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                  />
-                  <TextField
-                    label="Keterangan"
-                    variant="outlined"
-                    name="keterangan"
-                    value={formData.keterangan}
-                    onChange={handleChange}
-                    size={isMobile ? "small" : "medium"}
-                    fullWidth
-                    multiline
-                    rows={3}
-                  />
-                </Stack>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: { xs: 2, sm: 3 },
+                    height: '100%',
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Stack spacing={2.5}>
+                    <TextField
+                      label="Nama Peminjam"
+                      name="nama_peminjam"
+                      value={formData.nama_peminjam}
+                      onChange={handleChange}
+                      fullWidth
+                      required
+                      size={isMobile ? "medium" : "small"}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: 'background.paper'
+                        }
+                      }}
+                    />
+
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Tanggal Pinjam"
+                          name="tanggal_pinjam"
+                          type="date"
+                          value={formData.tanggal_pinjam}
+                          onChange={handleChange}
+                          fullWidth
+                          required
+                          size={isMobile ? "medium" : "small"}
+                          InputLabelProps={{ shrink: true }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              bgcolor: 'background.paper'
+                            }
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Rencana Kembali"
+                          name="rencana_kembali"
+                          type="date"
+                          value={formData.rencana_kembali}
+                          onChange={handleChange}
+                          fullWidth
+                          required
+                          size={isMobile ? "medium" : "small"}
+                          InputLabelProps={{ shrink: true }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              bgcolor: 'background.paper'
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+
+                    <TextField
+                      label="Keterangan"
+                      name="keterangan"
+                      value={formData.keterangan}
+                      onChange={handleChange}
+                      fullWidth
+                      multiline
+                      rows={isMobile ? 3 : 4}
+                      size={isMobile ? "medium" : "small"}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: 'background.paper'
+                        }
+                      }}
+                    />
+                  </Stack>
+                </Paper>
               </Grid>
             </Grid>
           )}
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            sx={{ mt: 3 }}
-          >
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              size={isMobile ? "medium" : "large"}
-              fullWidth
-            >
-              Simpan Peminjaman
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => setOpenFormDialog(false)}
-              size={isMobile ? "medium" : "large"}
-              fullWidth
-            >
-              Batal
-            </Button>
-          </Stack>
         </DialogContent>
+
+        {/* Dialog Actions */}
+        <DialogActions 
+          sx={{ 
+            p: 2.5, 
+            bgcolor: 'background.paper',
+            borderTop: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={() => setOpenFormDialog(false)}
+            size="large"
+            sx={{ 
+              px: 3,
+              mr: 1,
+              color: 'text.secondary',
+              borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main'
+              }
+            }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            size="large"
+            sx={{ 
+              px: 3,
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: 'none'
+              }
+            }}
+          >
+            Simpan Peminjaman
+          </Button>
+        </DialogActions>
       </Dialog>
 
-      {/* Return Dialog */}
+      {/* Return Dialog with improved styling */}
       <Dialog
         open={openReturnDialog}
         onClose={() => setOpenReturnDialog(false)}
         fullScreen={isMobile}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: isMobile ? 0 : 2,
+            backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))',
+            backdropFilter: 'blur(10px)',
+          }
+        }}
       >
         <DialogTitle
           sx={{
-            py: isMobile ? 1 : 2,
-            fontSize: isMobile ? "1.1rem" : "1.25rem",
-            fontWeight: 600,
+            py: isMobile ? 2 : 3,
+            px: { xs: 2, sm: 3 },
+            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+            color: 'white',
+            fontSize: { xs: '1.25rem', sm: '1.5rem' },
+            fontWeight: 700,
           }}
         >
           Pengembalian Barang
         </DialogTitle>
-        <DialogContent dividers sx={{ pt: isMobile ? 1 : 2 }}>
-          <Stack spacing={2}>
-            <Typography>
-              Anda akan mengembalikan barang{" "}
-              <strong>{selectedPeminjaman?.nama_barang}</strong>. Pastikan
-              barang dalam kondisi baik sebelum dikembalikan.
+
+        <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid',
+              borderColor: 'divider',
+              mb: 3
+            }}
+          >
+            <Typography 
+              variant="subtitle2" 
+              sx={{ 
+                color: 'text.secondary',
+                mb: 2 
+              }}
+            >
+              Anda akan mengembalikan barang <Box component="span" sx={{ color: 'text.primary', fontWeight: 600 }}>{selectedPeminjaman?.nama_barang}</Box>.
+              Pastikan barang dalam kondisi baik sebelum dikembalikan.
             </Typography>
 
-            <TextField
-              label="Tanggal Kembali"
-              variant="outlined"
-              name="tanggal_kembali"
-              type="date"
-              value={pengembalianData.tanggal_kembali}
-              onChange={(e) =>
-                setPengembalianData({
+            <Stack spacing={2.5}>
+              <TextField
+                label="Tanggal Kembali"
+                name="tanggal_kembali"
+                type="date"
+                value={pengembalianData.tanggal_kembali}
+                onChange={(e) => setPengembalianData({
                   ...pengembalianData,
                   tanggal_kembali: e.target.value,
-                })
-              }
-              size={isMobile ? "small" : "medium"}
-              fullWidth
-              required
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-            <TextField
-              label="Kondisi Barang"
-              variant="outlined"
-              name="kondisi"
-              select
-              value={pengembalianData.kondisi}
-              onChange={(e) =>
-                setPengembalianData({
+                })}
+                fullWidth
+                required
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper'
+                  }
+                }}
+              />
+              <TextField
+                label="Kondisi Barang"
+                name="kondisi"
+                select
+                value={pengembalianData.kondisi}
+                onChange={(e) => setPengembalianData({
                   ...pengembalianData,
                   kondisi: e.target.value,
-                })
-              }
-              size={isMobile ? "small" : "medium"}
-              fullWidth
-              required
-            >
-              <MenuItem value="baik">Baik</MenuItem>
-              <MenuItem value="rusak ringan">Rusak Ringan</MenuItem>
-              <MenuItem value="rusak berat">Rusak Berat</MenuItem>
-            </TextField>
-
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              sx={{ mt: 2 }}
-            >
-              <Button
-                variant="contained"
-                onClick={handlePengembalian}
-                size={isMobile ? "medium" : "large"}
+                })}
                 fullWidth
+                required
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'background.paper'
+                  }
+                }}
               >
-                Konfirmasi Pengembalian
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => setOpenReturnDialog(false)}
-                size={isMobile ? "medium" : "large"}
-                fullWidth
-              >
-                Batal
-              </Button>
+                <MenuItem value="baik">Baik</MenuItem>
+                <MenuItem value="rusak ringan">Rusak Ringan</MenuItem>
+                <MenuItem value="rusak berat">Rusak Berat</MenuItem>
+              </TextField>
             </Stack>
-          </Stack>
+          </Paper>
         </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, bgcolor: 'background.paper' }}>
+          <Button
+            variant="outlined"
+            onClick={() => setOpenReturnDialog(false)}
+            size="large"
+            sx={{ px: 3 }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handlePengembalian}
+            size="large"
+            sx={{ px: 3 }}
+          >
+            Konfirmasi Pengembalian
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Detail Dialog */}

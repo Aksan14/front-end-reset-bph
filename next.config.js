@@ -6,11 +6,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'backend-inventaris-production.up.railway.app',
-        port: '8080',
-        pathname: '/uploads/',
+        port: '',
+        pathname: '/**',
       },
     ],
-  },
+  }
 }
 
 module.exports = nextConfig
