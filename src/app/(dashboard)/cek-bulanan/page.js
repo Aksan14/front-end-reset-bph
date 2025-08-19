@@ -52,6 +52,7 @@ import {
 } from "@/services/pengecekanService";
 import { API_BASE_URL } from "@/config/api";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import Image from "next/image";
 
 export default function PengecekanPage() {
   const [petugas, setPetugas] = useState("");
@@ -998,17 +999,12 @@ export default function PengecekanPage() {
                           >
                             <TableCell>
                               {item.image_url ? (
-                                <img
+                                <Image
                                   src={item.image_url}
-                                  alt={item.nama}
-                                  style={{
-                                    width: 50,
-                                    height: 50,
-                                    objectFit: "cover",
-                                    cursor: "pointer",
-                                    borderRadius: "4px",
-                                  }}
-                                  onClick={() => handleViewItem(item)}
+                                  alt={item.nama_barang}
+                                  width={64}
+                                  height={64}
+                                  style={{ objectFit: "cover" }}
                                 />
                               ) : (
                                 <Avatar
