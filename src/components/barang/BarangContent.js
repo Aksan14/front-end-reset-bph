@@ -736,8 +736,8 @@ export default function DataBarang() {
                         src={item.Foto ? `${API_BASE_URL}${item.Foto}` : undefined}
                         variant="rounded"
                         sx={{
-                          width: 56,
-                          height: 56,
+                          width: 90,
+                          height: 90,
                           bgcolor: item.Foto ? 'transparent' : '#e2e8f0'
                         }}
                       >
@@ -873,8 +873,8 @@ export default function DataBarang() {
                                   src={`${API_BASE_URL}${item.Foto}`}
                                   alt={item.Namabarang}
                                   sx={{ 
-                                    width: 56, 
-                                    height: 56, 
+                                    width: 100, 
+                                    height: 100, 
                                     cursor: "pointer",
                                     '&:hover': {
                                       opacity: 0.8,
