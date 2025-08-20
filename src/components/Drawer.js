@@ -15,6 +15,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Image from 'next/image';
 import { menuItems } from '@/config/menuItems';
+import Cookies from 'js-cookie';
 
 export default function DashboardDrawer({ open, onClose, variant }) {
   const router = useRouter();
@@ -23,7 +24,9 @@ export default function DashboardDrawer({ open, onClose, variant }) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleLogout = () => {
-    router.push('/login');
+      Cookies.remove('authToken');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
   };
 
   const DrawerContent = (
