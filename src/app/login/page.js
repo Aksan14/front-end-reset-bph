@@ -26,6 +26,10 @@ const roboto = Roboto({
 
 export default function LoginPage() {
   const router = useRouter();
+  const [formDisplay, setFormDisplay] = useState({
+    username: "",
+    password: "",
+  });
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -55,6 +59,31 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatNRA = (value) => {
+    // Remove any non-digit characters
+    const numbers = value.replace(/\D/g, "");
+
+    // Add dots after every 2 digits
+    const formatted = numbers.replace(/(\d{2})?(\d{2})?(\d{3})?/, function (
+      match,
+      p1,
+      p2,
+      p3
+    ) {
+      let parts = [];
+      if (p1) parts.push(p1);
+      if (p2) parts.push(p2);
+      if (p3) parts.push(p3);
+      return parts.join(".");
+    });
+
+    return formatted;
+  };
+
+  const getNumericOnly = (value) => {
+    return value.replace(/\D/g, "");
   };
 
   return (
@@ -166,13 +195,28 @@ export default function LoginPage() {
           <TextField
             fullWidth
             label="NRA"
-            value={formData.username}
-            onChange={(e) =>
+            value={formDisplay.username}
+            onChange={(e) => {
+              const formatted = formatNRA(e.target.value);
+              const numeric = getNumericOnly(e.target.value);
+
+              // Update display value with dots
+              setFormDisplay((prev) => ({
+                ...prev,
+                username: formatted,
+              }));
+
+              // Update actual form data with numeric only
               setFormData((prev) => ({
                 ...prev,
-                username: e.target.value,
-              }))
-            }
+                username: numeric,
+              }));
+            }}
+            inputProps={{
+              maxLength: 10, // Max length including dots (XX.XX.XXX)
+              inputMode: "numeric", // Shows numeric keyboard on mobile
+              pattern: "[0-9.]*", // Allows only numbers and dots
+            }}
             required
             sx={{
               mb: 2,
@@ -187,6 +231,8 @@ export default function LoginPage() {
                 borderRadius: 1.5, // Modern rounded corners
               },
             }}
+            placeholder="Contoh: 13.24.015"
+            helperText="Format: XX.XX.XXX"
           />
 
           <TextField
