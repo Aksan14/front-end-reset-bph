@@ -726,12 +726,14 @@ export default function PeminjamanContent() {
                                 open={Boolean(anchorEl) && selectedPeminjamanForAction?.id === p.id}
                                 onClose={handleMenuClose}
                               >
-                                <MenuItem dense onClick={() => {
-                                  handleOpenDetail(p);
-                                  handleMenuClose();
-                                }}>
-                                  Lihat Detail
-                                </MenuItem>
+                                {p.tanggal_kembali && (
+                                  <MenuItem dense onClick={() => {
+                                    handleOpenDetail(p);
+                                    handleMenuClose();
+                                  }}>
+                                    Lihat Detail
+                                  </MenuItem>
+                                )}
                                 {!p.tanggal_kembali && (
                                   <MenuItem dense onClick={() => {
                                     setSelectedPeminjaman(p);
@@ -781,31 +783,20 @@ export default function PeminjamanContent() {
                                   Kembalikan
                                 </Button>
                               )}
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                color="info"
-                                onClick={() => handleOpenDetail(p)}
-                                sx={{ 
-                                  minWidth: 'auto',
-                                  px: 2 
-                                }}
-                              >
-                                Detail
-                              </Button>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                color="secondary"
-                                onClick={() => generatePDF(p)}
-                                startIcon={<PrintIcon />}
-                                sx={{ 
-                                  minWidth: 'auto',
-                                  px: 2 
-                                }}
-                              >
-                                Cetak
-                              </Button>
+                              {p.tanggal_kembali && (
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  color="info"
+                                  onClick={() => handleOpenDetail(p)}
+                                  sx={{ 
+                                    minWidth: 'auto',
+                                    px: 2 
+                                  }}
+                                >
+                                  Detail
+                                </Button>
+                              )}
                               {p.tanggal_kembali && (
                                 <Button
                                   variant="outlined"
@@ -1181,8 +1172,8 @@ export default function PeminjamanContent() {
                 mb: 2 
               }}
             >
-              Anda akan mengembalikan barang <Box component="span" sx={{ color: 'text.primary', fontWeight: 600 }}>{selectedPeminjaman?.nama_barang}</Box>.
-              Pastikan barang dalam kondisi baik sebelum dikembalikan.
+              Update untuk pengembalian barang <Box component="span" sx={{ color: 'text.primary', fontWeight: 600 }}>{selectedPeminjaman?.nama_barang}</Box>.
+              Isi form berikut untuk melanjutkan proses pengembalian.
             </Typography>
 
             <Stack spacing={2.5}>
