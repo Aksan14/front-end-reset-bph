@@ -46,6 +46,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { jsPDF } from "jspdf";
 import { barangService } from "@/services/barangService";
 import {
@@ -53,7 +54,8 @@ import {
   updatePengembalian,
   getPeminjaman,
 } from "@/services/peminjamanService";
-import { API_BASE_URL } from "@/config/api";
+import { API_BASE_URL, endpoints } from "@/config/api";
+import Cookies from 'js-cookie';
 
 export default function PeminjamanContent() {
   const theme = useTheme();
@@ -314,6 +316,39 @@ export default function PeminjamanContent() {
     });
 
     doc.save(`Laporan_Peminjaman_${peminjaman.id}.pdf`);
+  };
+
+  // Add delete handler function
+  const handleDelete = async (id) => {
+    try {
+      if (!window.confirm('Apakah Anda yakin ingin menghapus peminjaman ini?')) {
+        return;
+      }
+
+      const response = await fetch(endpoints.PEMINJAMAN_DELETE(id), {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Cookies.get('authToken')}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh peminjaman list using existing getPeminjaman function
+        const updatedList = await getPeminjaman();
+        setPeminjamanList(updatedList);
+        
+        // Use existing snackbar state
+        setMessage('Peminjaman berhasil dihapus');
+        setSnackbarOpen(true);
+      } else {
+        throw new Error('Gagal menghapus peminjaman');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      setError('Gagal menghapus peminjaman');
+      setSnackbarOpen(true);
+    }
   };
 
   return (
@@ -632,148 +667,162 @@ export default function PeminjamanContent() {
             <Table size={isMobile ? "small" : "medium"} stickyHeader>
               <TableHead>
                 <TableRow>
+                  <TableCell>Peminjam</TableCell>
                   <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
                     Barang
                   </TableCell>
-                  <TableCell>Peminjam</TableCell>
                   <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
                     Tanggal Pinjam
                   </TableCell>
-                  <TableCell sx={{ display: { xs: "none", lg: "table-cell" } }}>
-                    Rencana Kembali
-                  </TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Aksi</TableCell>
+                  <TableCell align="center">Status</TableCell>
+                  <TableCell align="right">Aksi</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {peminjamanList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={5} align="center">
                       Tidak ada data peminjaman
                     </TableCell>
                   </TableRow>
                 ) : (
                   peminjamanList.map((p) => (
                     <TableRow key={p.id}>
-                      <TableCell
-                        sx={{ display: { xs: "none", sm: "table-cell" } }}
-                      >
-                        <Typography
-                          sx={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 1,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {p.nama_barang}
-                        </Typography>
-                      </TableCell>
                       <TableCell>
-                        <Typography
-                          sx={{
-                            maxWidth: isMobile ? 120 : "none",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
+                        <Typography variant="body2" fontWeight={500}>
                           {p.nama_peminjam}
                         </Typography>
                       </TableCell>
-                      <TableCell
-                        sx={{ display: { xs: "none", md: "table-cell" } }}
-                      >
-                        {formatDateDisplay(p.tanggal_pinjam)}
+                      <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                        <Typography variant="body2">{p.nama_barang}</Typography>
                       </TableCell>
-                      <TableCell
-                        sx={{ display: { xs: "none", lg: "table-cell" } }}
-                      >
-                        {formatDateDisplay(p.rencana_kembali)}
+                      <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+                        <Typography variant="body2">
+                          {formatDateDisplay(p.tanggal_pinjam)}
+                        </Typography>
                       </TableCell>
-                      <TableCell>
+                      <TableCell align="center">
                         <Chip
-                          label={
-                            p.tanggal_kembali ? "Dikembalikan" : "Dipinjam"
-                          }
+                          label={p.tanggal_kembali ? "Dikembalikan" : "Dipinjam"}
                           color={p.tanggal_kembali ? "success" : "warning"}
-                          size={isMobile ? "small" : "medium"}
+                          size="small"
+                          sx={{ minWidth: 100 }}
                         />
                       </TableCell>
-                      <TableCell>
-                        {isMobile ? (
-                          <>
-                            <IconButton
-                              size="small"
-                              onClick={(e) => handleMenuOpen(e, p)}
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
-                            <Menu
-                              anchorEl={anchorEl}
-                              open={Boolean(anchorEl) && selectedPeminjamanForAction?.id === p.id}
-                              onClose={handleMenuClose}
-                            >
-                              <MenuItem
-                                onClick={() => {
-                                  generatePDF(p);
-                                  handleMenuClose();
-                                }}
+                      <TableCell align="right">
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          {isMobile ? (
+                            // Mobile view with menu
+                            <>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleMenuOpen(e, p)}
+                                sx={{ color: 'text.secondary' }}
                               >
-                                <ListItemIcon>
-                                  <PrintIcon fontSize="small" />
-                                </ListItemIcon>
-                                <ListItemText>Cetak Laporan</ListItemText>
-                              </MenuItem>
-                              {!p.tanggal_kembali && (
-                                <MenuItem
-                                  onClick={() => {
+                                <MoreVertIcon fontSize="small" />
+                              </IconButton>
+                              <Menu
+                                anchorEl={anchorEl}
+                                open={Boolean(anchorEl) && selectedPeminjamanForAction?.id === p.id}
+                                onClose={handleMenuClose}
+                              >
+                                <MenuItem dense onClick={() => {
+                                  handleOpenDetail(p);
+                                  handleMenuClose();
+                                }}>
+                                  Lihat Detail
+                                </MenuItem>
+                                {!p.tanggal_kembali && (
+                                  <MenuItem dense onClick={() => {
                                     setSelectedPeminjaman(p);
                                     setOpenReturnDialog(true);
                                     handleMenuClose();
+                                  }}>
+                                    Kembalikan Barang
+                                  </MenuItem>
+                                )}
+                                <MenuItem dense onClick={() => {
+                                  generatePDF(p);
+                                  handleMenuClose();
+                                }}>
+                                  Cetak Laporan
+                                </MenuItem>
+                                {p.tanggal_kembali && (
+                                  <MenuItem 
+                                    dense 
+                                    onClick={() => {
+                                      handleDelete(p.id);
+                                      handleMenuClose();
+                                    }}
+                                    sx={{ color: 'error.main' }}
+                                  >
+                                    Hapus
+                                  </MenuItem>
+                                )}
+                              </Menu>
+                            </>
+                          ) : (
+                            // Desktop view with all buttons
+                            <>
+                              {!p.tanggal_kembali && (
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => {
+                                    setSelectedPeminjaman(p);
+                                    setOpenReturnDialog(true);
+                                  }}
+                                  sx={{ 
+                                    minWidth: 'auto',
+                                    px: 2 
                                   }}
                                 >
-                                  <ListItemIcon>
-                                    <RefreshIcon fontSize="small" />
-                                  </ListItemIcon>
-                                  <ListItemText>Kembalikan Barang</ListItemText>
-                                </MenuItem>
+                                  Kembalikan
+                                </Button>
                               )}
-                            </Menu>
-                          </>
-                        ) : (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 1,
-                              flexWrap: "nowrap",
-                            }}
-                          >
-                            <Tooltip title="Cetak">
-                              <IconButton
-                                size="small"
-                                onClick={() => generatePDF(p)}
-                              >
-                                <PrintIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            {!p.tanggal_kembali && (
                               <Button
-                                variant="contained"
+                                variant="outlined"
                                 size="small"
-                                onClick={() => {
-                                  setSelectedPeminjaman(p);
-                                  setOpenReturnDialog(true);
+                                color="info"
+                                onClick={() => handleOpenDetail(p)}
+                                sx={{ 
+                                  minWidth: 'auto',
+                                  px: 2 
                                 }}
-                                sx={{ whiteSpace: "nowrap" }}
                               >
-                                Kembalikan
+                                Detail
                               </Button>
-                            )}
-                          </Box>
-                        )}
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                color="secondary"
+                                onClick={() => generatePDF(p)}
+                                startIcon={<PrintIcon />}
+                                sx={{ 
+                                  minWidth: 'auto',
+                                  px: 2 
+                                }}
+                              >
+                                Cetak
+                              </Button>
+                              {p.tanggal_kembali && (
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleDelete(p.id)}
+                                  sx={{ 
+                                    minWidth: 'auto',
+                                    px: 2 
+                                  }}
+                                >
+                                  Hapus
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))

@@ -18,6 +18,7 @@ export const endpoints = {
   PEMINJAMAN_ADD: `${API_BASE_URL}api/peminjaman`,
   PEMINJAMAN_KEMBALI: (id) => `${API_BASE_URL}api/peminjaman/kembali/${id}`, // PUT /api/peminjaman/kembali/:id
   PEMINJAMAN_LIST: `${API_BASE_URL}api/peminjaman`,             // GET /api/peminjaman
+  PEMINJAMAN_DELETE: (id) => `${API_BASE_URL}api/peminjaman/delete/${id}`, 
   BARANG_SEARCH: (q) => `${API_BASE_URL}api/inventaris/search?query=${encodeURIComponent(q)}`, // pencaharian barang
 
   // Statistik endpoints

@@ -1,70 +1,73 @@
-import { endpoints } from '@/config/api';
-import Cookies from 'js-cookie';
+import { endpoints } from "@/config/api";
+import Cookies from "js-cookie";
 
 export const authService = {
-    login: async (nra, password) => {
-        try {
-            const response = await fetch(endpoints.ADMIN_LOGIN, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ nra, password })
-            });
+  login: async (nra, password) => {
+    try {
+      const response = await fetch(endpoints.ADMIN_LOGIN, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ nra, password }),
+      });
 
-            const data = await response.json();
+      const data = await response.json();
 
-            // Check response format
-            if (data.code !== 200) {
-                return {
-                    success: false,
-                    error: data.message || 'Login gagal'
-                };
-            }
+      // Check response format
+      if (data.code !== 200) {
+        return {
+          success: false,
+          error: data.message || "Login gagal",
+        };
+      }
 
-            // Save token to cookie (data.data contains the JWT token)
-            if (data.data) {
-                Cookies.set('authToken', data.data, { expires: 7 }); // Token expires in 7 days
-                
-                // Save minimal user info
-                const user = { nra };
-                localStorage.setItem('user', JSON.stringify(user));
-            }
+      // Save token to cookie (data.data contains the JWT token)
+      if (data.data) {
+        // Tambah 1 jam 30 menit (90 menit) ke waktu sekarang
+        const expiryDate = new Date(Date.now() + 90 * 60 * 1000);
 
-            return {
-                success: true,
-                data: {
-                    token: data.data,
-                    user: { nra }
-                }
-            };
+        // Simpan cookie dengan waktu kadaluarsa 1 jam 30 menit
+        Cookies.set("authToken", data.data, { expires: expiryDate });
 
-        } catch (error) {
-            console.error('Login error:', error);
-            return {
-                success: false,
-                error: 'Terjadi kesalahan saat login. Silakan coba lagi.'
-            };
-        }
-    },
+        // Save minimal user info
+        const user = { nra };
+        localStorage.setItem("user", JSON.stringify(user));
+      }
 
-    logout: () => {
-        Cookies.remove('authToken');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-    },
-
-    isAuthenticated: () => {
-        return !!Cookies.get('authToken');
-    },
-
-    getToken: () => {
-        return Cookies.get('authToken');
-    },
-
-    getUser: () => {
-        const user = localStorage.getItem('user');
-        return user ? JSON.parse(user) : null;
+      return {
+        success: true,
+        data: {
+          token: data.data,
+          user: { nra },
+        },
+      };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        error: "Terjadi kesalahan saat login. Silakan coba lagi.",
+      };
     }
+  },
+
+  logout: () => {
+    Cookies.remove("authToken");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+  },
+
+  isAuthenticated: () => {
+    return !!Cookies.get("authToken");
+  },
+
+  getToken: () => {
+    return Cookies.get("authToken");
+  },
+
+  getUser: () => {
+    const user = localStorage.getItem("user");
+    return user ? JSON.parse(user) : null;
+  },
 };
