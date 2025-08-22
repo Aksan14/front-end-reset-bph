@@ -915,7 +915,8 @@ export default function PengecekanPage() {
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
             </Box>
-          ) : reports.length === 0 ? (
+          ) : !reports || reports.length === 0 ? (
+            // Added !reports || to check if reports is null or undefined
             <Box
               sx={{
                 p: 3,
