@@ -340,7 +340,8 @@ export default function DataBarang() {
   // Filter function that handles both search and category
   const filterBarang = (searchValue, category) => {
     try {
-      let filtered = [...originalBarang];
+      // Check if originalBarang is null, undefined or not an array
+      let filtered = Array.isArray(originalBarang) ? [...originalBarang] : [];
 
       // Apply search filter
       if (searchValue.trim()) {
