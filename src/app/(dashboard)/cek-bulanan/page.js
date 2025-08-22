@@ -1,5 +1,14 @@
 "use client";
 
+// Available categories
+const CATEGORIES = [
+  "Semua",
+  "Buku",
+  "Algo", 
+  "Dapur",
+  "Inventaris Coconut"
+];
+
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -33,6 +42,8 @@ import {
   Chip,
   Tooltip,
   InputAdornment,
+  FormControl,
+  InputLabel
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -42,7 +53,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { jsPDF } from "jspdf";
-import { barangService } from "@/services/barangService";
+import { getBarangTersedia } from "@/services/peminjamanService";
 import {
   startReport,
   getReports,
@@ -69,6 +80,7 @@ export default function PengecekanPage() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [barang, setBarang] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [editIndex, setEditIndex] = useState(null);
   const [checkIndex, setCheckIndex] = useState(null);
   const [formData, setFormData] = useState({
@@ -110,20 +122,21 @@ export default function PengecekanPage() {
   const fetchBarangTersedia = async () => {
     try {
       setLoading(true);
-      const result = await barangService.getAll();
-      if (result.success) {
-        const filteredBarang = result.data.filter(
-          (item) => item.Kondisi !== "Dimusnahkan"
-        );
-        setBarangList(filteredBarang);
-        setOriginalBarangList(filteredBarang); // Simpan data asli
-        setMessage("Data barang tersedia berhasil dimuat");
-        setSnackbarOpen(true);
-      } else {
-        setBarangList([]);
-        setOriginalBarangList([]); // Reset data asli
-        setError(result.message || "Gagal mengambil data barang tersedia");
-      }
+      const data = await getBarangTersedia();
+      // Transform the data to match the expected structure
+      const transformedData = data.map(item => ({
+        id: item.id,
+        Namabarang: item.nama_barang,
+        Kategori: item.kategori,
+        Satuan: item.satuan,
+        Kondisi: item.kondisi,
+        Foto: item.foto
+      }));
+      
+      setBarangList(transformedData);
+      setOriginalBarangList(transformedData); // Simpan data asli
+      setMessage("Data barang tersedia berhasil dimuat");
+      setSnackbarOpen(true);
     } catch (error) {
       console.error("Error fetching barang tersedia:", error);
       setBarangList([]);
@@ -134,26 +147,36 @@ export default function PengecekanPage() {
     }
   };
 
-  // Hapus fungsi handleSearch karena akan diganti dengan handleSearchChange
-  // Perbarui fungsi handleSearchChange
+  // Combined filter function
+  const filterBarang = (searchValue, category) => {
+    try {
+      let filtered = [...originalBarangList];
+
+      // Apply search filter
+      if (searchValue.trim()) {
+        filtered = filtered.filter(item =>
+          item.Namabarang?.toLowerCase().includes(searchValue.toLowerCase()) ||
+          item.Kategori?.toLowerCase().includes(searchValue.toLowerCase())
+        );
+      }
+
+      // Apply category filter
+      if (category && category !== "Semua") {
+        filtered = filtered.filter(item => item.Kategori === category);
+      }
+
+      setBarangList(filtered);
+      updateBarangTable(filtered); // Update tabel barang dengan hasil filter
+    } catch (error) {
+      console.error("Error filtering:", error);
+      setError("Terjadi kesalahan saat memfilter data");
+      setSnackbarOpen(true);
+    }
+  };
+
   const handleSearchChange = (value) => {
     setSearchQuery(value);
-
-    if (!value.trim()) {
-      // Jika pencarian kosong, kembalikan ke data asli
-      setBarangList(originalBarangList);
-      updateBarangTable(originalBarangList); // Update tabel barang
-      return;
-    }
-
-    // Filter data secara lokal
-    const filtered = originalBarangList.filter((item) =>
-      item.Namabarang?.toLowerCase().includes(value.toLowerCase()) ||
-      item.Kategori?.toLowerCase().includes(value.toLowerCase())
-    );
-
-    setBarangList(filtered);
-    updateBarangTable(filtered); // Update tabel barang dengan hasil filter
+    filterBarang(value, selectedCategory);
   };
 
   const handleSearch = async () => {
@@ -268,6 +291,7 @@ export default function PengecekanPage() {
           id: item.id,
           inventaris_id: item.id,
           nama: item.Namabarang || `Item ${item.id}`,
+          kategori: item.Kategori || "-",
           image_url: item.Foto
             ? `${API_BASE_URL}${item.Foto}`
             : `https://via.placeholder.com/50?text=Item+${item.id}`,
@@ -488,7 +512,7 @@ export default function PengecekanPage() {
         15,
         45
       );
-      let y = 60; // Mulai dari posisi 60 untuk tabel BARANG YANG SUDAH DICEK
+      let y = 60;
 
       // Tabel barang yang sudah dicek
       doc.setFontSize(14);
@@ -776,6 +800,13 @@ export default function PengecekanPage() {
     };
   }, []);
 
+  // Effect untuk handle perubahan kategori
+  useEffect(() => {
+    if (originalBarangList.length > 0) {
+      filterBarang(searchQuery, selectedCategory);
+    }
+  }, [selectedCategory]);
+
   return (
     <ProtectedRoute>
       <Box
@@ -947,7 +978,7 @@ export default function PengecekanPage() {
                   </Grid>
                 </Box>
 
-                <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
+                <Box sx={{ mb: 3, display: "flex", gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                   <TextField
                     label="Cari Barang"
                     variant="outlined"
@@ -966,8 +997,7 @@ export default function PengecekanPage() {
                           <IconButton
                             onClick={() => {
                               setSearchQuery('');
-                              setBarangList(originalBarangList);
-                              updateBarangTable(originalBarangList);
+                              filterBarang('', selectedCategory);
                             }}
                             edge="end"
                             size="small"
@@ -978,6 +1008,28 @@ export default function PengecekanPage() {
                       )
                     }}
                   />
+                  <FormControl 
+                    size="small" 
+                    sx={{ 
+                      minWidth: { xs: '100%', sm: 200 }
+                    }}
+                  >
+                    <InputLabel>Kategori</InputLabel>
+                    <Select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        filterBarang(searchQuery, e.target.value);
+                      }}
+                      label="Kategori"
+                    >
+                      {CATEGORIES.map((category) => (
+                        <MenuItem key={category} value={category}>
+                          {category}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                   {/* <Button
                     variant="contained"
                     onClick={handleSearch}
@@ -1009,9 +1061,10 @@ export default function PengecekanPage() {
                     <TableHead>
                       <TableRow>
                         <TableCell sx={{ width: "10%" }}>Gambar</TableCell>
-                        <TableCell sx={{ width: "20%" }}>Nama Barang</TableCell>
-                        <TableCell sx={{ width: "15%" }}>Status</TableCell>
-                        <TableCell sx={{ width: "15%" }}>Kondisi</TableCell>
+                        <TableCell sx={{ width: "15%" }}>Nama Barang</TableCell>
+                        <TableCell sx={{ width: "10%" }}>Kategori</TableCell>
+                        <TableCell sx={{ width: "10%" }}>Status</TableCell>
+                        <TableCell sx={{ width: "10%" }}>Kondisi</TableCell>
                         <TableCell sx={{ width: "20%" }}>Keterangan</TableCell>
                         {status === "draft" && (
                           <TableCell sx={{ width: "20%" }}>Aksi</TableCell>
@@ -1084,6 +1137,13 @@ export default function PengecekanPage() {
                               >
                                 {item.nama}
                               </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.kategori || "-"}
+                                size="small"
+                                sx={{ fontSize: '0.75rem' }}
+                              />
                             </TableCell>
                             <TableCell>
                               {item.checked ? (

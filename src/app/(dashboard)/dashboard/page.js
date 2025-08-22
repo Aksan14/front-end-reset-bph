@@ -22,6 +22,11 @@ import {
   Card,
   Snackbar,
   Alert,
+  Container,
+  Avatar,
+  Divider,
+  Chip,
+  Grid,
 } from "@mui/material";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -33,6 +38,10 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import SettingsIcon from "@mui/icons-material/Settings";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LockIcon from "@mui/icons-material/Lock";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import SparklineIcon from "@mui/icons-material/ShowChart";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { borrowService } from "@/services/borrowService"; // Restored original import
 import BorrowHistoryTable from "@/components/dashboard/BorrowHistoryTable"; // Restored original import
@@ -41,8 +50,8 @@ import { alpha, createTheme, ThemeProvider } from "@mui/material/styles";
 import PasswordDialog from "@/components/PasswordDialog"; // Restored original import
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
-// Enhanced StatCard Component
-const StatCard = ({ icon: Icon, title, value, color = "primary" }) => {
+// Enhanced StatCard Component with Premium Styling
+const StatCard = ({ icon: Icon, title, value, color = "primary", trend = null, subtitle = "" }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -51,70 +60,123 @@ const StatCard = ({ icon: Icon, title, value, color = "primary" }) => {
       elevation={0}
       sx={{
         height: "100%",
-        p: { xs: 2, sm: 2.5, md: 3 },
-        borderRadius: { xs: 1.5, sm: 2 },
+        p: { xs: 2.5, sm: 3, md: 3.5 },
+        borderRadius: { xs: 2, sm: 2.5, md: 3 },
         background: `linear-gradient(135deg, ${alpha(
           theme.palette[color].light,
-          0.15
-        )} 0%, ${alpha(theme.palette[color].main, 0.05)} 100%)`,
-        border: `1px solid ${alpha(theme.palette[color].main, 0.1)}`,
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          0.12
+        )} 0%, ${alpha(theme.palette[color].main, 0.03)} 50%, ${alpha(
+          theme.palette.background.paper,
+          0.95
+        )} 100%)`,
+        border: `1px solid ${alpha(theme.palette[color].main, 0.08)}`,
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
+        position: "relative",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "3px",
+          background: `linear-gradient(90deg, ${theme.palette[color].main}, ${theme.palette[color].light})`,
+          opacity: 0.6,
+        },
         "&:hover": {
-          transform: { xs: "none", md: "translateY(-8px)" },
-          boxShadow: `0 20px 25px -5px ${alpha(
+          transform: { xs: "none", md: "translateY(-12px) scale(1.02)" },
+          boxShadow: `0 25px 50px -12px ${alpha(
             theme.palette[color].main,
-            0.2
+            0.25
           )}`,
           "& .stat-icon": {
-            transform: "scale(1.1) rotate(10deg)",
-            background: theme.palette[color].main,
+            transform: "scale(1.15) rotate(8deg)",
+            background: `linear-gradient(135deg, ${theme.palette[color].main}, ${theme.palette[color].dark})`,
             color: "#fff",
+            boxShadow: `0 8px 32px ${alpha(theme.palette[color].main, 0.4)}`,
+          },
+          "& .stat-value": {
+            transform: "scale(1.05)",
           },
         },
       }}
     >
       <Stack
-        spacing={{ xs: 2, sm: 2.5, md: 3 }}
+        spacing={{ xs: 2.5, sm: 3, md: 3.5 }}
         sx={{ position: "relative", zIndex: 1 }}
       >
-        <Box
-          className="stat-icon"
-          sx={{
-            p: { xs: 1.5, sm: 1.8, md: 2 },
-            width: "fit-content",
-            borderRadius: { xs: 1.5, sm: 2 },
-            bgcolor: alpha(theme.palette[color].main, 0.12),
-            color: theme.palette[color].main,
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          }}
-        >
-          <Icon sx={{ fontSize: { xs: 24, sm: 28, md: 32 } }} />
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box
+            className="stat-icon"
+            sx={{
+              p: { xs: 1.8, sm: 2, md: 2.2 },
+              width: "fit-content",
+              borderRadius: { xs: 2, sm: 2.5, md: 3 },
+              bgcolor: alpha(theme.palette[color].main, 0.1),
+              color: theme.palette[color].main,
+              transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: `0 4px 20px ${alpha(theme.palette[color].main, 0.15)}`,
+            }}
+          >
+            <Icon sx={{ fontSize: { xs: 26, sm: 30, md: 34 } }} />
+          </Box>
+          
+          {trend && (
+            <Chip
+              icon={trend > 0 ? <TrendingUpIcon /> : <TrendingDownIcon />}
+              label={`${trend > 0 ? '+' : ''}${trend}%`}
+              size="small"
+              sx={{
+                bgcolor: trend > 0 ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.error.main, 0.1),
+                color: trend > 0 ? theme.palette.success.main : theme.palette.error.main,
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                "& .MuiChip-icon": {
+                  fontSize: "1rem",
+                },
+              }}
+            />
+          )}
         </Box>
 
         <Box>
           <Typography
             variant="h3"
+            className="stat-value"
             sx={{
-              fontWeight: 700,
-              fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
-              background: `linear-gradient(45deg, ${theme.palette[color].dark}, ${theme.palette[color].main})`,
+              fontWeight: 800,
+              fontSize: { xs: "2.2rem", sm: "2.8rem", md: "3.2rem" },
+              background: `linear-gradient(135deg, ${theme.palette[color].dark}, ${theme.palette[color].main}, ${theme.palette[color].light})`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               mb: { xs: 0.5, sm: 1 },
+              transition: "all 0.3s ease",
+              letterSpacing: "-1px",
             }}
           >
             {value}
           </Typography>
           <Typography
             sx={{
-              fontSize: { xs: "0.9rem", sm: "1rem", md: "1.1rem" },
-              color: alpha(theme.palette[color].dark, 0.7),
-              fontWeight: 500,
+              fontSize: { xs: "1rem", sm: "1.1rem", md: "1.15rem" },
+              color: alpha(theme.palette[color].dark, 0.8),
+              fontWeight: 600,
+              mb: subtitle ? 0.5 : 0,
             }}
           >
             {title}
           </Typography>
+          {subtitle && (
+            <Typography
+              sx={{
+                fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.9rem" },
+                color: alpha(theme.palette.text.secondary, 0.7),
+                fontWeight: 400,
+              }}
+            >
+              {subtitle}
+            </Typography>
+          )}
         </Box>
       </Stack>
     </Card>
@@ -123,64 +185,108 @@ const StatCard = ({ icon: Icon, title, value, color = "primary" }) => {
 
 const theme = createTheme({
   typography: {
-    fontFamily: '"Inter", "Poppins", sans-serif',
+    fontFamily: '"Inter", "Plus Jakarta Sans", "Segoe UI", sans-serif',
     h4: {
       fontWeight: 800,
       color: "#0f172a",
-      letterSpacing: "-0.5px",
+      letterSpacing: "-1px",
+      lineHeight: 1.2,
     },
     h5: {
       fontWeight: 700,
       color: "#1e293b",
+      letterSpacing: "-0.5px",
+      lineHeight: 1.3,
+    },
+    h6: {
+      fontWeight: 600,
+      color: "#334155",
       letterSpacing: "-0.3px",
+      lineHeight: 1.4,
     },
     body1: {
       color: "#64748b",
+      fontWeight: 400,
+      lineHeight: 1.6,
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 600,
     },
   },
   palette: {
+    mode: 'light',
     primary: {
-      main: "#6366f1",
+      main: "#0284c7",
+      light: "#38bdf8",
+      dark: "#0369a1",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#8b5cf6",
+      main: "#2563eb",
+      light: "#60a5fa",
+      dark: "#1d4ed8",
     },
     error: {
-      main: "#ef4444",
+      main: "#dc2626",
+      light: "#f87171",
+      dark: "#b91c1c",
     },
     success: {
-      main: "#10b981",
+      main: "#059669",
+      light: "#34d399",
+      dark: "#047857",
     },
     info: {
       main: "#0ea5e9",
+      light: "#38bdf8",
+      dark: "#0284c7",
     },
     warning: {
-      main: "#f59e0b",
+      main: "#d97706",
+      light: "#fbbf24",
+      dark: "#b45309",
     },
     background: {
-      default: "#f8fafc",
+      default: "#f7f8fa",
       paper: "#ffffff",
     },
     text: {
       primary: "#0f172a",
-      secondary: "#64748b",
+      secondary: "#475569",
     },
+    divider: "rgba(0,0,0,0.06)",
   },
   shape: {
-    borderRadius: 14,
+    borderRadius: 16,
   },
+  shadows: [
+    "none",
+    "0px 2px 4px rgba(0,0,0,0.03)",
+    "0px 4px 8px rgba(0,0,0,0.04)",
+    "0px 8px 16px rgba(0,0,0,0.05)",
+    "0px 12px 24px rgba(0,0,0,0.06)",
+    "0px 16px 32px rgba(0,0,0,0.07)",
+    ...Array(19).fill("none"),
+  ],
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: "#f7f8fa",
+          scrollBehavior: 'smooth',
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: "0 8px 32px 0 rgba(0,0,0,0.05)",
-          border: "1px solid rgba(0,0,0,0.03)",
-          transition:
-            "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          backgroundImage: 'none',
+          boxShadow: "0 0 0 1px rgba(0,0,0,0.05), 0 10px 40px -10px rgba(0,0,0,0.05)",
+          transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
-            transform: "translateY(-4px)",
-            boxShadow: "0 12px 48px 0 rgba(0,0,0,0.1)",
+            transform: "translateY(-6px)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.05), 0 20px 60px -10px rgba(0,0,0,0.1)",
           },
         },
       },
@@ -188,13 +294,48 @@ const theme = createTheme({
     MuiBadge: {
       styleOverrides: {
         badge: {
-          right: -10,
-          top: -10,
+          right: -8,
+          top: -8,
           fontSize: "0.75rem",
           fontWeight: 700,
-          height: "24px",
-          minWidth: "24px",
+          height: "20px",
+          minWidth: "20px",
           padding: "0 6px",
+          borderRadius: "10px",
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          fontWeight: 600,
+          fontSize: "0.75rem",
+          height: "24px",
+        },
+        label: {
+          padding: "0 8px",
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "12px",
+          fontWeight: 600,
+          boxShadow: "none",
+          textTransform: "none",
+          "&:hover": {
+            boxShadow: "none",
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "12px",
+          padding: "8px",
         },
       },
     },
@@ -283,7 +424,7 @@ export default function Dashboard() {
           p: { xs: 2, sm: 2.5, md: 3 },
           minHeight: "100vh",
           ml: { xs: 1, sm: 2 },
-          backgroundColor: "#f8faff",
+          backgroundColor: "#f7f8fa",
           borderRadius: { xs: "16px", sm: "24px" },
           boxShadow: "0 0 20px rgba(0,0,0,0.02)",
           minWidth: { xs: "320px", sm: "auto" },
@@ -475,7 +616,7 @@ export default function Dashboard() {
               >
                 <StatCard
                   icon={InventoryIcon}
-                  title="Total Peminjaman"
+                  title="Total Inventaris"
                   value={totalItems}
                   color="primary"
                 />

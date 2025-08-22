@@ -28,6 +28,7 @@ import {
   Select,
   MenuItem,
   FormControl,
+  FormHelperText,
   InputLabel,
   Pagination,
   Chip,
@@ -236,9 +237,19 @@ const formFieldStyles = {
   },
 };
 
+// Available categories
+const CATEGORIES = [
+  "Semua",
+  "Buku",
+  "Algo",
+  "Dapur",
+  "Inventaris Coconut"
+];
+
 export default function DataBarang() {
   const [barang, setBarang] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -315,24 +326,41 @@ export default function DataBarang() {
     };
   }, []);
 
-  // Update handleSearch function
+  // Effect to handle category changes
+  useEffect(() => {
+    filterBarang(searchQuery, selectedCategory);
+  }, [selectedCategory]);
+
+  // Combined search and filter function
   const handleSearch = (value) => {
     setSearchQuery(value);
+    filterBarang(value, selectedCategory);
+  };
+
+  // Filter function that handles both search and category
+  const filterBarang = (searchValue, category) => {
     try {
-      if (value.trim() === '') {
-        setBarang(originalBarang); // Kembalikan ke data asli
-        return;
+      let filtered = [...originalBarang];
+
+      // Apply search filter
+      if (searchValue.trim()) {
+        filtered = filtered.filter(item =>
+          item.Namabarang?.toLowerCase().includes(searchValue.toLowerCase()) ||
+          item.Kategori?.toLowerCase().includes(searchValue.toLowerCase())
+        );
       }
-      const filtered = originalBarang.filter(item => 
-        item.Namabarang.toLowerCase().includes(value.toLowerCase()) ||
-        item.Kategori.toLowerCase().includes(value.toLowerCase())
-      );
+
+      // Apply category filter
+      if (category && category !== "Semua") {
+        filtered = filtered.filter(item => item.Kategori === category);
+      }
+
       setBarang(filtered);
     } catch (error) {
-      console.error("Error searching:", error);
+      console.error("Error filtering:", error);
       setSnackbar({
         open: true,
-        message: "Terjadi kesalahan saat mencari data",
+        message: "Terjadi kesalahan saat memfilter data",
         severity: "error"
       });
     }
@@ -656,26 +684,54 @@ export default function DataBarang() {
             }}
           >
             <Stack spacing={1.5}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Cari barang..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)} // Langsung panggil handleSearch
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: 'text.secondary' }} />
-                    </InputAdornment>
-                  )
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: 'background.paper',
-                    borderRadius: 1.5
-                  }
-                }}
-              />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Cari barang..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: 'text.secondary' }} />
+                      </InputAdornment>
+                    )
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'background.paper',
+                      borderRadius: 1.5
+                    }
+                  }}
+                />
+                <FormControl 
+                  size="small"
+                  sx={{ 
+                    minWidth: { xs: '100%', sm: 200 },
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'background.paper',
+                      borderRadius: 1.5
+                    }
+                  }}
+                >
+                  <InputLabel>Kategori</InputLabel>
+                  <Select
+                    value={selectedCategory}
+                    onChange={(e) => {
+                      setSelectedCategory(e.target.value);
+                      setCurrentPage(1); // Reset to first page when changing category
+                    }}
+                    label="Kategori"
+                  >
+                    {CATEGORIES.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
               <Button
                 fullWidth
                 variant="contained"
@@ -1538,16 +1594,27 @@ export default function DataBarang() {
                   required
                 />
 
-                <TextField
-                  label="Kategori"
-                  name="Kategori"
-                  value={formData.Kategori}
-                  onChange={handleChange}
+                <FormControl 
+                  fullWidth 
                   error={Boolean(formErrors.Kategori)}
-                  helperText={formErrors.Kategori}
-                  fullWidth
                   required
-                />
+                >
+                  <InputLabel>Kategori</InputLabel>
+                  <Select
+                    name="Kategori"
+                    value={formData.Kategori}
+                    onChange={handleChange}
+                    label="Kategori"
+                  >
+                    <MenuItem value="Buku">Buku</MenuItem>
+                    <MenuItem value="Algo">Algo</MenuItem>
+                    <MenuItem value="Dapur">Dapur</MenuItem>
+                    <MenuItem value="Inventaris Coconut">Inventaris Coconut</MenuItem>
+                  </Select>
+                  {formErrors.Kategori && (
+                    <FormHelperText>{formErrors.Kategori}</FormHelperText>
+                  )}
+                </FormControl>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <TextField

@@ -45,7 +45,7 @@ export const getAvailableItems = async () => {
   try {
     const res = await axios.get(endpoints.BARANG_TERSEDIA);
     if (res.status === 200 && res.data.code === 200) {
-      return res.data.data; // Asumsi data berisi { id, nama, image_url }
+      return res.data.data; 
     } else {
       throw new Error(res.data.message || "Failed to fetch available items");
     }

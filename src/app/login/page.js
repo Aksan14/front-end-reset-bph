@@ -217,7 +217,7 @@ export default function LoginPage() {
               inputMode: "numeric", // Shows numeric keyboard on mobile
               pattern: "[0-9.]*", // Allows only numbers and dots
             }}
-            required
+            required  
             sx={{
               mb: 2,
               "& .MuiInputLabel-root": {
@@ -231,7 +231,7 @@ export default function LoginPage() {
                 borderRadius: 1.5, // Modern rounded corners
               },
             }}
-            placeholder="Contoh: 13.24.015"
+            placeholder="Contoh: 01.01.001"
             helperText="Format: XX.XX.XXX"
           />
 

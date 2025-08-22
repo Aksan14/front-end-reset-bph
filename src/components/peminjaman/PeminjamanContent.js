@@ -39,6 +39,9 @@ import {
   Stack,
   useMediaQuery,
   useTheme,
+  FormControl,
+  InputLabel,
+  Select
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import PrintIcon from "@mui/icons-material/Print";
@@ -53,9 +56,19 @@ import {
   createPeminjaman,
   updatePengembalian,
   getPeminjaman,
+  getBarangTersedia,
 } from "@/services/peminjamanService";
 import { API_BASE_URL, endpoints } from "@/config/api";
 import Cookies from 'js-cookie';
+
+// Available categories
+const CATEGORIES = [
+  "Semua",
+  "Buku",
+  "Algo",
+  "Dapur",
+  "Inventaris Coconut"
+];
 
 export default function PeminjamanContent() {
   const theme = useTheme();
@@ -66,6 +79,7 @@ export default function PeminjamanContent() {
   const [barangList, setBarangList] = useState([]);
   const [peminjamanList, setPeminjamanList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -123,35 +137,88 @@ export default function PeminjamanContent() {
 
   // Format tanggal untuk API
   const formatDateForAPI = (dateStr) => {
+    if (!dateStr) {
+      // If no date is provided, return today's date
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    }
+    
+    // Try to parse the date string
+    const parts = dateStr.split(/[-T]/);
+    if (parts.length >= 3) {
+      // If the date is already in YYYY-MM-DD format
+      const [year, month, day] = parts;
+      const date = new Date(year, month - 1, day);
+      if (!isNaN(date.getTime())) {
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+    }
+    
+    // Fallback: try to parse the string directly
     const date = new Date(dateStr);
-    return date.toISOString().split("T")[0];
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    // If all parsing fails, return today's date
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   };
 
-  // Ambil data barang
+  // Ambil data barang tersedia
   const fetchBarangTersedia = async () => {
     try {
       setLoading(true);
-      const result = await barangService.getAll();
-      if (result.success) {
-        const filteredBarang = result.data.filter((item) => item.Kondisi !== "Dimusnahkan");
-        setBarangList(filteredBarang);
-        setOriginalBarangList(filteredBarang); // Simpan data asli
-        setMessage("Data barang berhasil dimuat");
-        setSnackbarOpen(true);
-      } else {
-        setBarangList([]);
-        setOriginalBarangList([]); // Reset data asli
-        setError(result.message || "Gagal mengambil data barang");
-        setSnackbarOpen(true);
-      }
+      const data = await getBarangTersedia();
+      
+      // Transform data to match component's expected structure
+      const transformedData = data.map(item => ({
+        id: item.id,
+        Namabarang: item.nama_barang,
+        Kategori: item.kategori,
+        Satuan: item.satuan,
+        Kondisi: item.kondisi,
+        Foto: item.foto // Using the foto field from the API
+      }));
+      
+      setBarangList(transformedData);
+      setOriginalBarangList(transformedData);
+      setMessage("Data barang tersedia berhasil dimuat");
+      setSnackbarOpen(true);
     } catch (error) {
-      console.error("Error:", error);
       setBarangList([]);
-      setOriginalBarangList([]); // Reset data asli
-      setError(error.message || "Terjadi kesalahan");
+      setOriginalBarangList([]);
+      setError(error.message || "Gagal mengambil data barang tersedia");
       setSnackbarOpen(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Combined filter function
+  const filterBarang = (searchValue, category) => {
+    try {
+      let filtered = [...originalBarangList];
+
+      // Apply search filter
+      if (searchValue.trim()) {
+        filtered = filtered.filter(item =>
+          item.Namabarang?.toLowerCase().includes(searchValue.toLowerCase()) ||
+          item.Kategori?.toLowerCase().includes(searchValue.toLowerCase())
+        );
+      }
+
+      // Apply category filter
+      if (category && category !== "Semua") {
+        filtered = filtered.filter(item => item.Kategori === category);
+      }
+
+      setBarangList(filtered);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error("Error filtering:", error);
+      setError("Terjadi kesalahan saat memfilter data");
+      setSnackbarOpen(true);
     }
   };
 
@@ -159,22 +226,7 @@ export default function PeminjamanContent() {
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-
-    if (!value.trim()) {
-      // Jika search kosong, kembalikan ke data asli
-      setBarangList(originalBarangList);
-      setCurrentPage(1);
-      return;
-    }
-
-    // Filter data secara lokal
-    const filtered = originalBarangList.filter((item) =>
-      item.Namabarang.toLowerCase().includes(value.toLowerCase()) ||
-      item.Kategori?.toLowerCase().includes(value.toLowerCase())
-    );
-
-    setBarangList(filtered);
-    setCurrentPage(1);
+    filterBarang(value, selectedCategory);
   };
 
   // Handle key press for search
@@ -188,13 +240,14 @@ export default function PeminjamanContent() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [peminjamanResult] = await Promise.all([
-          getPeminjaman(),
-          fetchBarangTersedia(),
-        ]);
+        // Fetch barang tersedia first
+        await fetchBarangTersedia();
+        
+        // Then fetch peminjaman data
+        const peminjamanResult = await getPeminjaman();
         setPeminjamanList(peminjamanResult);
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error loading data:", error);
         setError("Gagal memuat data");
         setSnackbarOpen(true);
       }
@@ -202,10 +255,19 @@ export default function PeminjamanContent() {
     loadData();
   }, []);
 
+  // Effect untuk handle perubahan kategori
+  useEffect(() => {
+    filterBarang(searchQuery, selectedCategory);
+  }, [selectedCategory]);
+
   // Fungsi untuk pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  console.log('BarangList length:', barangList.length); // Debugging log
+  console.log('Current page:', currentPage);
+  console.log('Items per page:', itemsPerPage);
   const currentItems = barangList.slice(indexOfFirstItem, indexOfLastItem);
+  console.log('Current items:', currentItems); // Debugging log
   const totalPages = Math.ceil(barangList.length / itemsPerPage);
 
   // Handle perubahan form
@@ -409,7 +471,7 @@ export default function PeminjamanContent() {
             borderColor: "divider",
           }}
         >
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: 'column', sm: 'row' } }}>
             <TextField
               fullWidth
               size="small"
@@ -427,8 +489,7 @@ export default function PeminjamanContent() {
                     <IconButton
                       onClick={() => {
                         setSearchQuery("");
-                        setBarangList(originalBarangList);
-                        setCurrentPage(1);
+                        filterBarang("", selectedCategory);
                       }}
                       edge="end"
                       size="small"
@@ -438,7 +499,11 @@ export default function PeminjamanContent() {
                   </InputAdornment>
                 ),
               }}
-              sx={{
+            />
+            <FormControl 
+              size="small" 
+              sx={{ 
+                minWidth: { xs: '100%', sm: 200 },
                 "& .MuiOutlinedInput-root": {
                   height: 40,
                   bgcolor: "background.paper",
@@ -447,7 +512,23 @@ export default function PeminjamanContent() {
                   },
                 },
               }}
-            />
+            >
+              <InputLabel>Kategori</InputLabel>
+              <Select
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  filterBarang(searchQuery, e.target.value);
+                }}
+                label="Kategori"
+              >
+                {CATEGORIES.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
         </Card>
 
@@ -514,7 +595,9 @@ export default function PeminjamanContent() {
                       }}
                     >
                       <Avatar
-                        src={barang.Foto ? `${API_BASE_URL}${barang.Foto}` : undefined}
+                        src={barang.Foto ? `${API_BASE_URL}${barang.Foto}` : 
+                             barang.foto ? `${API_BASE_URL}${barang.foto}` : undefined}
+                        alt={barang.Namabarang}
                         variant="square"
                         sx={{
                           position: 'absolute',
@@ -1181,11 +1264,14 @@ export default function PeminjamanContent() {
                 label="Tanggal Kembali"
                 name="tanggal_kembali"
                 type="date"
-                value={pengembalianData.tanggal_kembali}
-                onChange={(e) => setPengembalianData({
-                  ...pengembalianData,
-                  tanggal_kembali: e.target.value,
-                })}
+                value={pengembalianData.tanggal_kembali || new Date().toISOString().split('T')[0]}
+                onChange={(e) => {
+                  const selectedDate = e.target.value;
+                  setPengembalianData({
+                    ...pengembalianData,
+                    tanggal_kembali: selectedDate || new Date().toISOString().split('T')[0]
+                  });
+                }}
                 fullWidth
                 required
                 size="small"
