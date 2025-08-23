@@ -936,7 +936,10 @@ export default function PeminjamanContent() {
             borderRadius: isMobile ? 0 : 3,
             backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))',
             backdropFilter: 'blur(10px)',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            m: isMobile ? 0 : 2,
+            height: isMobile ? '100vh' : 'auto',
+            maxHeight: isMobile ? '100vh' : '90vh'
           }
         }}
       >
@@ -978,212 +981,380 @@ export default function PeminjamanContent() {
         {/* Dialog Content */}
         <DialogContent 
           sx={{ 
-            p: { xs: 2, sm: 3 },
-            bgcolor: 'background.default' 
+            p: 0,
+            bgcolor: 'background.default',
+            height: isMobile ? 'calc(100vh - 120px)' : 'auto',
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {selectedBarang && (
-            <Grid container spacing={3}>
-              {/* Left Side - Item Details with Larger Image */}
-              <Grid item xs={12} sm={6}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: { xs: 2, sm: 3 },
-                    height: '100%',
-                    borderRadius: 2,
-                    bgcolor: 'rgba(255, 255, 255, 0.8)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}
-                >
-                  {/* Large Image Container */}
-                  <Box sx={{ 
-                    position: 'relative',
-                    width: '100%',
-                    height: { 
-                      xs: '340px', // Larger for mobile
-                      sm: '380px', // Larger for tablet
-                      md: '420px', // Larger for desktop
-                      lg: '460px'  // Larger for large screens
-                    },
-                    mb: 3,
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    bgcolor: 'background.neutral',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                  }}>
-                    <Avatar
-                      src={selectedBarang.Foto ? `${API_BASE_URL}${selectedBarang.Foto}` : undefined}
-                      variant="square"
+            <Box sx={{ p: { xs: 1, sm: 3 }, flex: 1 }}>
+              {isMobile ? (
+                // Mobile Layout - Stack vertically
+                <Stack spacing={2}>
+                  {/* Item Details Section */}
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid',
+                      borderColor: 'divider'
+                    }}
+                  >
+                    <Stack direction="row" spacing={2} alignItems="stretch">
+                      {/* Gambar dengan ukuran yang seimbang */}
+                      <Box sx={{
+                        width: '40%',
+                        minHeight: 200,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        bgcolor: 'background.neutral',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Avatar
+                          src={selectedBarang.Foto ? `${API_BASE_URL}${selectedBarang.Foto}` : undefined}
+                          variant="square"
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            minHeight: 200,
+                            '& img': {
+                              objectFit: 'contain',
+                              p: 2
+                            }
+                          }}
+                        >
+                          <ImageIcon sx={{ fontSize: 64 }} />
+                        </Avatar>
+                      </Box>
+                      
+                      {/* Informasi Barang */}
+                      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <Box>
+                          <Typography variant="h6" fontWeight={600} gutterBottom sx={{ fontSize: '1.1rem' }}>
+                            {selectedBarang.Namabarang}
+                          </Typography>
+                          <Stack direction="column" spacing={1}>
+                            <Typography variant="body2" color="text.secondary">
+                              Kategori: {selectedBarang.Kategori}
+                            </Typography>
+                            <Box>
+                              <Chip 
+                                label={selectedBarang.Kondisi}
+                                color={selectedBarang.Kondisi === "Baik" ? "success" : "warning"}
+                                size="small"
+                              />
+                            </Box>
+                          </Stack>
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </Paper>
+
+                  {/* Form Section */}
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid',
+                      borderColor: 'divider'
+                    }}
+                  >
+                    <Typography variant="h6" gutterBottom sx={{ 
+                      fontWeight: 600,
+                      fontSize: '1.1rem',
+                      mb: 2
+                    }}>
+                      Form Peminjaman
+                    </Typography>
+                    
+                    <Stack spacing={2.5}>
+                      <TextField
+                        label="Nama Peminjam"
+                        name="nama_peminjam"
+                        value={formData.nama_peminjam}
+                        onChange={handleChange}
+                        fullWidth
+                        required
+                        size="medium"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: 'background.paper'
+                          }
+                        }}
+                      />
+                      
+                      <TextField
+                        label="Tanggal Pinjam"
+                        name="tanggal_pinjam"
+                        type="date"
+                        value={formData.tanggal_pinjam}
+                        onChange={handleChange}
+                        fullWidth
+                        required
+                        size="medium"
+                        InputLabelProps={{ shrink: true }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: 'background.paper'
+                          }
+                        }}
+                      />
+                      
+                      <TextField
+                        label="Rencana Kembali"
+                        name="rencana_kembali"
+                        type="date"
+                        value={formData.rencana_kembali}
+                        onChange={handleChange}
+                        fullWidth
+                        required
+                        size="medium"
+                        InputLabelProps={{ shrink: true }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: 'background.paper'
+                          }
+                        }}
+                      />
+                      
+                      <TextField
+                        label="Keterangan"
+                        name="keterangan"
+                        value={formData.keterangan}
+                        onChange={handleChange}
+                        fullWidth
+                        multiline
+                        rows={3}
+                        size="medium"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            bgcolor: 'background.paper'
+                          }
+                        }}
+                      />
+                    </Stack>
+                  </Paper>
+                </Stack>
+              ) : (
+                // Desktop Layout - Side by side
+                <Grid container spacing={3} alignItems="stretch">
+                  {/* Left Side - Item Details */}
+                  <Grid item xs={12} md={5}>
+                    <Paper
+                      elevation={0}
                       sx={{
-                        width: '100%',
+                        p: 2.5,
                         height: '100%',
-                        '& img': {
-                          objectFit: 'contain',
-                          p: 3 // Larger padding in dialog
-                        }
+                        borderRadius: 2,
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}
                     >
-                      <ImageIcon sx={{ fontSize: 80 }} /> {/* Larger placeholder icon */}
-                    </Avatar>
-                  </Box>
+                      <Box sx={{ 
+                        position: 'relative',
+                        width: '100%',
+                        height: 380,
+                        mb: 2,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        bgcolor: 'background.neutral',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Avatar
+                          src={selectedBarang.Foto ? `${API_BASE_URL}${selectedBarang.Foto}` : undefined}
+                          variant="square"
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            '& img': {
+                              objectFit: 'contain',
+                              p: 3
+                            }
+                          }}
+                        >
+                          <ImageIcon sx={{ fontSize: 96 }} />
+                        </Avatar>
+                      </Box>
 
-                  {/* Item Details in Grid for better mobile layout */}
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Nama Barang
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {selectedBarang.Namabarang}
-                      </Typography>
-                    </Grid>
-                    
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Kategori
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {selectedBarang.Kategori || '-'}
-                      </Typography>
-                    </Grid>
+                      <Stack spacing={1.5}>
+                        <Box>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                            Nama Barang
+                          </Typography>
+                          <Typography variant="body1" fontWeight={500}>
+                            {selectedBarang.Namabarang}
+                          </Typography>
+                        </Box>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                              Kategori
+                            </Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                              {selectedBarang.Kategori || '-'}
+                            </Typography>
+                          </Grid>
 
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Jumlah Tersedia
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {selectedBarang.Jumlah} {selectedBarang.Satuan}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Kondisi
-                      </Typography>
-                      <Chip 
-                        label={selectedBarang.Kondisi}
-                        color={selectedBarang.Kondisi === "Baik" ? "success" : "warning"}
-                        size="small"
-                        sx={{ mt: 0.5 }}
-                      />
-                    </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                              Kondisi
+                            </Typography>
+                            <Chip 
+                              label={selectedBarang.Kondisi}
+                              color={selectedBarang.Kondisi === "Baik" ? "success" : "warning"}
+                              size="small"
+                            />
+                          </Grid>
+                        </Grid>
+                      </Stack>
+                    </Paper>
                   </Grid>
-                </Paper>
-              </Grid>
 
-              {/* Right Side - Form with better spacing for mobile */}
-              <Grid item xs={12} sm={6}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: { xs: 2, sm: 3 },
-                    height: '100%',
-                    borderRadius: 2,
-                    bgcolor: 'rgba(255, 255, 255, 0.8)',
-                    border: '1px solid',
-                    borderColor: 'divider'
-                  }}
-                >
-                  <Stack spacing={2.5}>
-                    <TextField
-                      label="Nama Peminjam"
-                      name="nama_peminjam"
-                      value={formData.nama_peminjam}
-                      onChange={handleChange}
-                      fullWidth
-                      required
-                      size={isMobile ? "medium" : "small"}
+                  {/* Right Side - Form Section */}
+                  <Grid item xs={12} md={7}>
+                    <Paper
+                      elevation={0}
                       sx={{
-                        '& .MuiOutlinedInput-root': {
-                          bgcolor: 'background.paper'
-                        }
+                        p: 2.5,
+                        height: '100%',
+                        borderRadius: 2,
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}
-                    />
-
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
+                    >
+                      <Typography variant="h6" gutterBottom sx={{ 
+                        fontWeight: 600, 
+                        color: 'text.primary',
+                        mb: 2,
+                        fontSize: '1.25rem'
+                      }}>
+                        Form Peminjaman
+                      </Typography>
+                      
+                      <Stack spacing={2.5} sx={{ flex: 1 }}>
                         <TextField
-                          label="Tanggal Pinjam"
-                          name="tanggal_pinjam"
-                          type="date"
-                          value={formData.tanggal_pinjam}
+                          label="Nama Peminjam"
+                          name="nama_peminjam"
+                          value={formData.nama_peminjam}
                           onChange={handleChange}
                           fullWidth
                           required
-                          size={isMobile ? "medium" : "small"}
-                          InputLabelProps={{ shrink: true }}
+                          size="small"
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               bgcolor: 'background.paper'
                             }
                           }}
                         />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
+                        
+                        <Stack direction="row" spacing={2}>
+                          <TextField
+                            label="Tanggal Pinjam"
+                            name="tanggal_pinjam"
+                            type="date"
+                            value={formData.tanggal_pinjam}
+                            onChange={handleChange}
+                            fullWidth
+                            required
+                            size="small"
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: 'background.paper'
+                              }
+                            }}
+                          />
+                          <TextField
+                            label="Rencana Kembali"
+                            name="rencana_kembali"
+                            type="date"
+                            value={formData.rencana_kembali}
+                            onChange={handleChange}
+                            fullWidth
+                            required
+                            size="small"
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: 'background.paper'
+                              }
+                            }}
+                          />
+                        </Stack>
+                        
                         <TextField
-                          label="Rencana Kembali"
-                          name="rencana_kembali"
-                          type="date"
-                          value={formData.rencana_kembali}
+                          label="Keterangan"
+                          name="keterangan"
+                          value={formData.keterangan}
                           onChange={handleChange}
                           fullWidth
-                          required
-                          size={isMobile ? "medium" : "small"}
-                          InputLabelProps={{ shrink: true }}
+                          multiline
+                          rows={3}
+                          size="small"
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               bgcolor: 'background.paper'
                             }
                           }}
                         />
-                      </Grid>
-                    </Grid>
-
-                    <TextField
-                      label="Keterangan"
-                      name="keterangan"
-                      value={formData.keterangan}
-                      onChange={handleChange}
-                      fullWidth
-                      multiline
-                      rows={isMobile ? 3 : 4}
-                      size={isMobile ? "medium" : "small"}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          bgcolor: 'background.paper'
-                        }
-                      }}
-                    />
-                  </Stack>
-                </Paper>
-              </Grid>
-            </Grid>
+                      </Stack>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
           )}
         </DialogContent>
 
         {/* Dialog Actions */}
         <DialogActions 
           sx={{ 
-            p: 2.5, 
+            p: { xs: 2, sm: 2.5 }, 
             bgcolor: 'background.paper',
             borderTop: '1px solid',
-            borderColor: 'divider'
+            borderColor: 'divider',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1.5, sm: 0 },
+            position: isMobile ? 'sticky' : 'relative',
+            bottom: 0,
+            zIndex: 1000,
+            boxShadow: isMobile ? '0 -2px 8px rgba(0,0,0,0.1)' : 'none'
           }}
         >
           <Button
             variant="outlined"
             onClick={() => setOpenFormDialog(false)}
             size="large"
+            fullWidth={isMobile}
             sx={{ 
               px: 3,
-              mr: 1,
+              mr: { xs: 0, sm: 1 },
               color: 'text.secondary',
               borderColor: 'divider',
+              height: { xs: 48, sm: 40 },
               '&:hover': {
                 borderColor: 'primary.main'
               }
@@ -1195,8 +1366,10 @@ export default function PeminjamanContent() {
             variant="contained"
             onClick={handleSubmit}
             size="large"
+            fullWidth={isMobile}
             sx={{ 
               px: 3,
+              height: { xs: 48, sm: 40 },
               boxShadow: 'none',
               '&:hover': {
                 boxShadow: 'none'
