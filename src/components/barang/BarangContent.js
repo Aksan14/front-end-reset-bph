@@ -288,7 +288,7 @@ export default function DataBarang() {
       const result = await barangService.getAll();
       if (result.success) {
         setBarang(result.data);
-        setOriginalBarang(result.data); // Simpan data asli
+        setOriginalBarang(result.data); 
         setSnackbar({
           open: true,
           message: "Data barang berhasil dimuat",
@@ -296,7 +296,7 @@ export default function DataBarang() {
         });
       } else {
         setBarang([]);
-        setOriginalBarang([]); // Reset data asli juga
+        setOriginalBarang([]);
         setSnackbar({
           open: true,
           message: result.message || "Gagal mengambil data barang",
@@ -306,7 +306,7 @@ export default function DataBarang() {
     } catch (error) {
       console.error("Error fetching barang:", error);
       setBarang([]);
-      setOriginalBarang([]); // Reset data asli juga
+      setOriginalBarang([]);
       setSnackbar({
         open: true,
         message: "Terjadi kesalahan saat mengambil data",
