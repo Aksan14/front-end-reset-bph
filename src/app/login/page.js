@@ -94,96 +94,70 @@ export default function LoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "rgba(248, 250, 252, 0.2)", // More transparent background
+        backgroundColor: "#f8fafc",
+        backgroundImage: `
+          radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+          radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+          linear-gradient(135deg, transparent 0%, rgba(99, 102, 241, 0.02) 100%)
+        `,
         p: 2,
         position: "relative",
-        overflow: "hidden",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: { xs: "150%", sm: "100%" },
-          height: { xs: "150%", sm: "100%" },
-          backgroundImage: "url('/images/coconut-logo.png')",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
-          backgroundSize: "contain",
-          opacity: 0.3, // Increased logo visibility further
-          transform: {
-            xs: "translate(-50%, -50%) rotate(-15deg) scale(0.8)",
-            sm: "translate(-50%, -50%) rotate(-15deg)",
-          },
-          pointerEvents: "none",
-          zIndex: 0,
-        },
       }}
     >
       <Card
         elevation={0}
         sx={{
           width: "100%",
-          maxWidth: { xs: 320, sm: 400 },
-          p: { xs: 2.5, sm: 4 },
-          border: "1px solid",
-          borderColor: "rgba(255, 255, 255, 0.08)", // Even more transparent border
-          borderRadius: { xs: 3, sm: 2 },
-          backgroundColor: "rgba(255, 255, 255, 0.45)", // More transparent card
-          backdropFilter: "blur(20px)", // Increased blur effect
+          maxWidth: { xs: 380, sm: 450 },
+          p: { xs: 3, sm: 4.5 },
+          borderRadius: { xs: 4, sm: 3 },
+          backgroundColor: "white",
           position: "relative",
           zIndex: 1,
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.06)", // Lighter shadow
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          border: "1px solid #e5e7eb",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+            transform: "translateY(-2px)",
+          },
         }}
       >
-        {/* Update Avatar style */}
-        <Box sx={{ textAlign: "center", mb: 3 }}>
+        {/* Header Section */}
+        <Box sx={{ textAlign: "center", mb: 4 }}>
           <Avatar
             sx={{
-              width: { xs: 70, sm: 80 },
-              height: { xs: 70, sm: 80 },
+              width: { xs: 80, sm: 90 },
+              height: { xs: 80, sm: 90 },
               mx: "auto",
-              bgcolor: "primary.main",
-              boxShadow: (theme) => `0 8px 24px ${theme.palette.primary.main}25`,
-              transition: "all 0.3s ease",
+              mb: 2,
+              bgcolor: "#4f46e5",
+              boxShadow: "0 8px 25px rgba(79, 70, 229, 0.25)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
-                transform: "scale(1.05) rotate(5deg)",
-                boxShadow: (theme) => `0 12px 32px ${theme.palette.primary.main}40`,
+                transform: "scale(1.05)",
+                boxShadow: "0 12px 35px rgba(79, 70, 229, 0.35)",
+                bgcolor: "#4338ca",
               },
             }}
           >
-            <InventoryIcon sx={{ fontSize: { xs: 35, sm: 40 } }} />
+            <InventoryIcon sx={{ fontSize: { xs: 40, sm: 45 } }} />
           </Avatar>
+          
+          <Typography
+            variant="h4"
+            fontWeight={700}
+            sx={{
+              mb: 1,
+              color: "#1f2937",
+              fontSize: { xs: "1.5rem", sm: "1.75rem" },
+              letterSpacing: "-0.025em",
+              fontFamily: "'Roboto', sans-serif",
+            }}
+          >
+            Sistem Inventaris
+          </Typography>
         </Box>
-
-        {/* Update Typography styles */}
-        <Typography
-          variant="h5"
-          fontWeight={700}
-          textAlign="center"
-          sx={{
-            mb: 1,
-            color: "primary.main",
-            fontSize: { xs: "1.25rem", sm: "1.5rem" },
-            letterSpacing: "-0.01em", // Modern typography
-            fontFamily: "'Roboto', sans-serif",
-          }}
-        >
-          Selamat Datang
-        </Typography>
-
-        <Typography
-          variant="body2"
-          textAlign="center"
-          sx={{
-            mb: 3,
-            color: "text.secondary",
-            fontSize: { xs: "0.875rem", sm: "1rem" },
-            letterSpacing: "0.01em", // Modern typography
-            fontWeight: 300, // Lighter weight for modern look
-          }}
-        >
-          Silakan masuk untuk melanjutkan
-        </Typography>
 
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
@@ -219,16 +193,26 @@ export default function LoginPage() {
             }}
             required  
             sx={{
-              mb: 2,
+              mb: 3,
               "& .MuiInputLabel-root": {
-                fontSize: { xs: "0.875rem", sm: "1rem" },
-                fontWeight: 400,
+                fontSize: { xs: "0.95rem", sm: "1rem" },
+                fontWeight: 500,
                 letterSpacing: "0.01em",
               },
               "& .MuiOutlinedInput-root": {
-                fontSize: { xs: "0.875rem", sm: "1rem" },
+                fontSize: { xs: "0.95rem", sm: "1rem" },
                 letterSpacing: "0.01em",
-                borderRadius: 1.5, // Modern rounded corners
+                borderRadius: 2,
+                "& fieldset": {
+                  borderColor: "#d1d5db",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#4f46e5",
+                },
+                "&.Mui-focused fieldset": {
+                  borderWidth: 2,
+                  borderColor: "#4f46e5",
+                },
               },
             }}
             placeholder="Contoh: 01.01.001"
@@ -253,13 +237,41 @@ export default function LoginPage() {
                   <IconButton
                     onClick={() => setShowPassword(!showPassword)}
                     edge="end"
+                    sx={{
+                      color: "#6b7280",
+                      "&:hover": {
+                        color: "#4f46e5",
+                      },
+                    }}
                   >
                     {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                   </IconButton>
                 </InputAdornment>
               ),
             }}
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: 4,
+              "& .MuiInputLabel-root": {
+                fontSize: { xs: "0.95rem", sm: "1rem" },
+                fontWeight: 500,
+                letterSpacing: "0.01em",
+              },
+              "& .MuiOutlinedInput-root": {
+                fontSize: { xs: "0.95rem", sm: "1rem" },
+                letterSpacing: "0.01em",
+                borderRadius: 2,
+                "& fieldset": {
+                  borderColor: "#d1d5db",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#4f46e5",
+                },
+                "&.Mui-focused fieldset": {
+                  borderWidth: 2,
+                  borderColor: "#4f46e5",
+                },
+              },
+            }}
           />
 
           <Button
@@ -268,12 +280,28 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             sx={{
-              py: { xs: 1.25, sm: 1.5 },
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-              borderRadius: 1.5,
-              textTransform: "none", // Modern button text
-              fontWeight: 500,
+              py: { xs: 1.5, sm: 1.75 },
+              fontSize: { xs: "0.95rem", sm: "1.05rem" },
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 600,
               letterSpacing: "0.02em",
+              backgroundColor: "#4f46e5",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                backgroundColor: "#4338ca",
+                transform: "translateY(-1px)",
+                boxShadow: "0 10px 25px rgba(79, 70, 229, 0.3)",
+              },
+              "&:active": {
+                transform: "translateY(0px)",
+              },
+              "&:disabled": {
+                backgroundColor: "#d1d5db",
+                color: "#9ca3af",
+                transform: "none",
+                boxShadow: "none",
+              },
             }}
           >
             {loading ? "Memproses..." : "Masuk"}
