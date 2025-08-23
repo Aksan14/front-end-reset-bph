@@ -67,7 +67,7 @@ const CATEGORIES = [
   "Buku",
   "Algo",
   "Dapur",
-  "Inventaris Coconut"
+  "Lainnya"
 ];
 
 export default function PeminjamanContent() {

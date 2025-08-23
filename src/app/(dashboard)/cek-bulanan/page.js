@@ -6,7 +6,7 @@ const CATEGORIES = [
   "Buku",
   "Algo", 
   "Dapur",
-  "Inventaris Coconut"
+  "Lainnya"
 ];
 
 import { useEffect, useState } from "react";

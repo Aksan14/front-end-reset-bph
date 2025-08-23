@@ -243,7 +243,7 @@ const CATEGORIES = [
   "Buku",
   "Algo",
   "Dapur",
-  "Inventaris Coconut"
+  "Lainnya"
 ];
 
 export default function DataBarang() {
@@ -1610,7 +1610,7 @@ export default function DataBarang() {
                     <MenuItem value="Buku">Buku</MenuItem>
                     <MenuItem value="Algo">Algo</MenuItem>
                     <MenuItem value="Dapur">Dapur</MenuItem>
-                    <MenuItem value="Inventaris Coconut">Inventaris Coconut</MenuItem>
+                    <MenuItem value="Lainnya">Lainnya</MenuItem>
                   </Select>
                   {formErrors.Kategori && (
                     <FormHelperText>{formErrors.Kategori}</FormHelperText>
