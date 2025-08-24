@@ -709,16 +709,31 @@ export default function PengecekanPage() {
       printFrame.style.position = "absolute";
       printFrame.style.left = "-9999px";
       document.body.appendChild(printFrame);
-      
+
       printFrame.contentDocument.write(`
         <html>
           <head>
+            <title>Laporan Pengecekan Inventaris</title>
             <style>
-              body { 
-                font-family: 'Times New Roman', serif; 
+              /* CSS Reset untuk print agar bersih */
+              @media print {
+                body, html {
+                  background: #fff !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  box-shadow: none !important;
+                }
+                * {
+                  box-shadow: none !important;
+                  background: none !important;
+                }
+              }
+              body {
+                font-family: 'Times New Roman', serif;
                 font-size: 12pt;
-                line-height: 1.5; 
+                line-height: 1.5;
                 margin: 20px;
+                background: #fff;
               }
             </style>
           </head>
@@ -727,14 +742,14 @@ export default function PengecekanPage() {
           </body>
         </html>
       `);
-      
+
       printFrame.contentDocument.close();
       printFrame.contentWindow.focus();
       printFrame.contentWindow.print();
-      
+
       setMessage("Dialog print telah dibuka. Silakan pilih printer dan cetak laporan.");
       setSnackbarOpen(true);
-      
+
       setTimeout(() => {
         document.body.removeChild(printFrame);
       }, 1000);
