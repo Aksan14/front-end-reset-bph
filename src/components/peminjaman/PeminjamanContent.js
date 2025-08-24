@@ -61,7 +61,6 @@ import {
 import { API_BASE_URL, endpoints } from "@/config/api";
 import Cookies from "js-cookie";
 
-// Available categories
 const CATEGORIES = ["Semua", "Buku", "Algo", "Dapur", "Lainnya"];
 
 export default function PeminjamanContent() {
@@ -69,7 +68,6 @@ export default function PeminjamanContent() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
-  // State utama
   const [barangList, setBarangList] = useState([]);
   const [peminjamanList, setPeminjamanList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,12 +78,10 @@ export default function PeminjamanContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [originalBarangList, setOriginalBarangList] = useState([]);
 
-  // State untuk menu aksi mobile
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedPeminjamanForAction, setSelectedPeminjamanForAction] =
     useState(null);
 
-  // State untuk form peminjaman
   const [formData, setFormData] = useState({
     barang_id: "",
     nama_peminjam: "",
@@ -94,24 +90,21 @@ export default function PeminjamanContent() {
     keterangan: "",
   });
 
-  // State untuk pengembalian
   const [selectedPeminjaman, setSelectedPeminjaman] = useState(null);
   const [pengembalianData, setPengembalianData] = useState({
     tanggal_kembali: "",
     kondisi: "baik",
   });
 
-  // State untuk dialog
+
   const [openFormDialog, setOpenFormDialog] = useState(false);
   const [openReturnDialog, setOpenReturnDialog] = useState(false);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [selectedBarang, setSelectedBarang] = useState(null);
 
-  // State untuk pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = isMobile ? 6 : isTablet ? 9 : 10;
 
-  // Handle menu aksi mobile
   const handleMenuOpen = (event, peminjaman) => {
     setAnchorEl(event.currentTarget);
     setSelectedPeminjamanForAction(peminjaman);
@@ -122,7 +115,6 @@ export default function PeminjamanContent() {
     setSelectedPeminjamanForAction(null);
   };
 
-  // Format tanggal untuk display
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
@@ -130,18 +122,14 @@ export default function PeminjamanContent() {
     return date.toLocaleDateString("id-ID");
   };
 
-  // Format tanggal untuk API
   const formatDateForAPI = (dateStr) => {
     if (!dateStr) {
-      // If no date is provided, return today's date
       const today = new Date();
       return today.toISOString().split("T")[0];
     }
 
-    // Try to parse the date string
     const parts = dateStr.split(/[-T]/);
     if (parts.length >= 3) {
-      // If the date is already in YYYY-MM-DD format
       const [year, month, day] = parts;
       const date = new Date(year, month - 1, day);
       if (!isNaN(date.getTime())) {
@@ -149,31 +137,27 @@ export default function PeminjamanContent() {
       }
     }
 
-    // Fallback: try to parse the string directly
     const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       return date.toISOString().split("T")[0];
     }
 
-    // If all parsing fails, return today's date
     const today = new Date();
     return today.toISOString().split("T")[0];
   };
 
-  // Ambil data barang tersedia
   const fetchBarangTersedia = async () => {
     try {
       setLoading(true);
       const data = await getBarangTersedia();
 
-      // Transform data to match component's expected structure
       const transformedData = data.map((item) => ({
         id: item.id,
         Namabarang: item.nama_barang,
         Kategori: item.kategori,
         Satuan: item.satuan,
         Kondisi: item.kondisi,
-        Foto: item.foto, // Using the foto field from the API
+        Foto: item.foto,
       }));
 
       setBarangList(transformedData);
@@ -190,12 +174,10 @@ export default function PeminjamanContent() {
     }
   };
 
-  // Combined filter function
   const filterBarang = (searchValue, category) => {
     try {
       let filtered = [...originalBarangList];
 
-      // Apply search filter
       if (searchValue.trim()) {
         filtered = filtered.filter(
           (item) =>
@@ -206,7 +188,6 @@ export default function PeminjamanContent() {
         );
       }
 
-      // Apply category filter
       if (category && category !== "Semua") {
         filtered = filtered.filter((item) => item.Kategori === category);
       }
@@ -220,28 +201,18 @@ export default function PeminjamanContent() {
     }
   };
 
-  // Handle pencarian
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
     filterBarang(value, selectedCategory);
   };
 
-  // Handle key press for search
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
 
-  // Load data awal
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch barang tersedia first
         await fetchBarangTersedia();
 
-        // Then fetch peminjaman data
         const peminjamanResult = await getPeminjaman();
         setPeminjamanList(peminjamanResult);
       } catch (error) {
@@ -253,46 +224,40 @@ export default function PeminjamanContent() {
     loadData();
   }, []);
 
-  // Effect untuk handle perubahan kategori
   useEffect(() => {
     filterBarang(searchQuery, selectedCategory);
   }, [selectedCategory]);
 
-  // Fungsi untuk pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  console.log("BarangList length:", barangList.length); // Debugging log
+  console.log("BarangList length:", barangList.length); 
   console.log("Current page:", currentPage);
   console.log("Items per page:", itemsPerPage);
   const currentItems = barangList.slice(indexOfFirstItem, indexOfLastItem);
-  console.log("Current items:", currentItems); // Debugging log
+  console.log("Current items:", currentItems); 
   const totalPages = Math.ceil(barangList.length / itemsPerPage);
 
-  // Handle perubahan form
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Pilih barang untuk dipinjam
   const handleSelectBarang = (barang) => {
     setFormData({
       ...formData,
       barang_id: barang.id,
     });
-    setSelectedBarang(barang); // Fixed the function name
+    setSelectedBarang(barang); 
     setOpenFormDialog(true);
   };
 
-  // Buka dialog detail barang
+
   const handleOpenDetail = (peminjaman) => {
     setSelectedPeminjaman(peminjaman);
     setOpenDetailDialog(true);
   };
 
-  // Submit peminjaman
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validasi form
     if (
       !formData.nama_peminjam ||
       !formData.tanggal_pinjam ||
@@ -323,7 +288,6 @@ export default function PeminjamanContent() {
     }
   };
 
-  // Handle pengembalian
   const handlePengembalian = async () => {
     try {
       await updatePengembalian(selectedPeminjaman.id, {
@@ -356,7 +320,6 @@ export default function PeminjamanContent() {
       kondisi: peminjaman.kondisi,
       keterangan: peminjaman.keterangan,
     });
-    // Tampilkan preview dan print
     const printFrame = document.createElement("iframe");
     printFrame.style.position = "absolute";
     printFrame.style.left = "-9999px";
@@ -382,7 +345,6 @@ export default function PeminjamanContent() {
     }, 1000);
   }
 
-  // Template HTML untuk laporan peminjaman
   const laporanPeminjamanTemplate = (data) => `
   <div style="font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; max-width: 800px; margin: 0 auto; padding: 20px;">
     <div style="display: flex; align-items: center; margin-bottom: 10px;">
@@ -470,7 +432,6 @@ export default function PeminjamanContent() {
   </div>
 `;
 
-  // Add delete handler function
   const handleDelete = async (id) => {
     try {
       if (
@@ -488,11 +449,9 @@ export default function PeminjamanContent() {
       });
 
       if (response.ok) {
-        // Refresh peminjaman list using existing getPeminjaman function
         const updatedList = await getPeminjaman();
         setPeminjamanList(updatedList);
 
-        // Use existing snackbar state
         setMessage("Peminjaman berhasil dihapus");
         setSnackbarOpen(true);
       } else {
@@ -910,7 +869,6 @@ export default function PeminjamanContent() {
                           justifyContent="flex-end"
                         >
                           {isMobile ? (
-                            // Mobile view with menu
                             <>
                               <IconButton
                                 size="small"
@@ -974,7 +932,6 @@ export default function PeminjamanContent() {
                               </Menu>
                             </>
                           ) : (
-                            // Desktop view with all buttons
                             <>
                               {!p.tanggal_kembali && (
                                 <Button
@@ -1121,9 +1078,7 @@ export default function PeminjamanContent() {
           {selectedBarang && (
             <Box sx={{ p: { xs: 1, sm: 3 }, flex: 1 }}>
               {isMobile ? (
-                // Mobile Layout - Stack vertically
                 <Stack spacing={2}>
-                  {/* Item Details Section */}
                   <Paper
                     elevation={0}
                     sx={{
@@ -1135,7 +1090,6 @@ export default function PeminjamanContent() {
                     }}
                   >
                     <Stack direction="row" spacing={2} alignItems="stretch">
-                      {/* Gambar dengan ukuran yang seimbang */}
                       <Box
                         sx={{
                           width: "40%",
@@ -1304,9 +1258,7 @@ export default function PeminjamanContent() {
                   </Paper>
                 </Stack>
               ) : (
-                // Desktop Layout - Side by side
                 <Grid container spacing={3} alignItems="stretch">
-                  {/* Left Side - Item Details */}
                   <Grid item xs={12} md={5}>
                     <Paper
                       elevation={0}

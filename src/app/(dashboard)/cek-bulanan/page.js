@@ -1,6 +1,5 @@
 "use client";
 
-// Available categories
 const CATEGORIES = [
   "Semua",
   "Buku",
@@ -120,7 +119,7 @@ const laporanTemplate = (data) => `
       <hr style="height:0;border:none;border-top:1px solid #000;margin:0;" />
     </div>
     <div style="text-align: center; margin: 20px 0;">
-      <h3 style="margin: 0; font-size: 16pt;">LAPORAN PENGECEKAN INVENTARIS BULANAN</h3>
+      <h3 style="margin: 0; font-size: 16pt; text-decoration: underline;">LAPORAN PENGECEKAN INVENTARIS BULANAN</h3>
     </div>
     
     <div style="margin: 20px 0;">
@@ -161,7 +160,7 @@ const laporanTemplate = (data) => `
     </div>
     
     <div style="margin: 20px 0;">
-      <h4 style="margin: 10px 0; color: #080a08ff;">BARANG YANG SUDAH DICEK</h4>
+      <h4 style="margin: 10px 0; color: #2e7d32;">BARANG YANG SUDAH DICEK</h4>
       <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
         <thead>
           <tr style="background-color: #46a3ba; color: white;">
@@ -194,7 +193,7 @@ const laporanTemplate = (data) => `
     
     ${data.uncheckedItems?.length > 0 ? `
     <div style="margin: 20px 0;">
-      <h4 style="margin: 10px 0; color: #000000ff;">BARANG YANG BELUM DICEK</h4>
+      <h4 style="margin: 10px 0; color: #d32f2f;">BARANG YANG BELUM DICEK</h4>
       <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
         <thead>
           <tr style="background-color: #f44336; color: white;">
@@ -709,31 +708,21 @@ export default function PengecekanPage() {
       printFrame.style.position = "absolute";
       printFrame.style.left = "-9999px";
       document.body.appendChild(printFrame);
-
+      
       printFrame.contentDocument.write(`
         <html>
           <head>
             <title>Laporan Pengecekan Inventaris</title>
             <style>
-              /* CSS Reset untuk print agar bersih */
-              @media print {
-                body, html {
-                  background: #fff !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  box-shadow: none !important;
-                }
-                * {
-                  box-shadow: none !important;
-                  background: none !important;
-                }
-              }
-              body {
-                font-family: 'Times New Roman', serif;
+              body { 
+                font-family: 'Times New Roman', serif; 
                 font-size: 12pt;
-                line-height: 1.5;
+                line-height: 1.5; 
                 margin: 20px;
-                background: #fff;
+              }
+              @page { margin: 20mm; }
+              @media print {
+                body { margin: 0; }
               }
             </style>
           </head>
@@ -742,14 +731,14 @@ export default function PengecekanPage() {
           </body>
         </html>
       `);
-
+      
       printFrame.contentDocument.close();
       printFrame.contentWindow.focus();
       printFrame.contentWindow.print();
-
-      setMessage("Dialog print telah dibuka. Silakan pilih printer dan cetak laporan.");
+      
+      setMessage("🖨️ Dialog print telah dibuka. Silakan pilih printer dan cetak laporan.");
       setSnackbarOpen(true);
-
+      
       setTimeout(() => {
         document.body.removeChild(printFrame);
       }, 1000);

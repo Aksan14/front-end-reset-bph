@@ -8,5 +8,4 @@ export const menuItems = [
   { text: 'Barang', icon: <PaymentsIcon />, path: '/barang' },
   { text: 'Halaman Peminjaman', icon: <AssignmentReturnIcon />, path: '/halaman-peminjaman' },
   { text: 'Cek Bulanan', icon: <ReportProblemIcon />, path: '/cek-bulanan' },
-  // { text: 'Report', icon: <ReportProblemIcon />, path: '/report' },
 ]

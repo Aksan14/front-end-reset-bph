@@ -1,4 +1,3 @@
-// src/services/borrowService.js
 import { endpoints } from "@/config/api";
 
 export const borrowService = {
@@ -7,10 +6,9 @@ export const borrowService = {
       const response = await fetch(endpoints.PEMINJAMAN_LIST, {
         method: "GET",
         headers: {
-          "ngrok-skip-browser-warning": "true", // Jika menggunakan ngrok
+          "ngrok-skip-browser-warning": "true", 
           "Content-Type": "application/json",
         },
-        // credentials: "include", // Jika diperlukan untuk autentikasi
       });
       if (!response.ok) {
         const errorText = await response.text();

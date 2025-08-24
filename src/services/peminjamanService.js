@@ -20,7 +20,7 @@ export const getBarangTersedia = async () => {
         kategori: item.kategori,
         satuan: item.satuan,
         kondisi: item.kondisi,
-        foto: item.foto // Include the foto field
+        foto: item.foto 
       }));
     } else {
       throw new Error(result.message || "Gagal mengambil barang tersedia");

@@ -1,4 +1,3 @@
-// src/services/inventarisService.js (unchanged, just for reference)
 import axios from "axios";
 import { endpoints } from "@/config/api";
 

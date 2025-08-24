@@ -4,7 +4,6 @@ import { Box, Stack } from "@mui/material";
 import dynamic from "next/dynamic";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
-// Dynamically import the content component with SSR disabled
 const BarangContent = dynamic(
   () => import("@/components/barang/BarangContent"),
   {

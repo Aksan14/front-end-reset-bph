@@ -1,7 +1,5 @@
-// src/utils/cookies.js
 export const setAuthCookie = (token, days = 7) => {
   const date = new Date();
-  // Set expiration to 1 hour 30 minutes (90 minutes)
   date.setTime(date.getTime() + (90 * 60 * 1000));
   const expires = "expires=" + date.toUTCString();
   document.cookie = `authToken=${token}; ${expires}; path=/; Secure; SameSite=Strict${process.env.NODE_ENV === 'production' ? '; HttpOnly' : ''}`;

@@ -14,8 +14,6 @@ export const authService = {
       });
 
       const data = await response.json();
-
-      // Check response format
       if (data.code !== 200) {
         return {
           success: false,
@@ -23,15 +21,11 @@ export const authService = {
         };
       }
 
-      // Save token to cookie (data.data contains the JWT token)
       if (data.data) {
-        // Tambah 1 jam 30 menit (90 menit) ke waktu sekarang
         const expiryDate = new Date(Date.now() + 90 * 60 * 1000);
 
-        // Simpan cookie dengan waktu kadaluarsa 1 jam 30 menit
         Cookies.set("authToken", data.data, { expires: expiryDate });
 
-        // Save minimal user info
         const user = { nra };
         localStorage.setItem("user", JSON.stringify(user));
       }

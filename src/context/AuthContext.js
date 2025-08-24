@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
     const router = useRouter();
 
     useEffect(() => {
-        // Check if user is logged in on mount
         const token = Cookies.get('authToken');
         const savedUser = localStorage.getItem('user');
 
@@ -28,10 +27,8 @@ export function AuthProvider({ children }) {
             const result = await authService.login(username, password);
             
             if (result.success) {
-                // Set cookie for authentication (expires in 1 day)
                 Cookies.set('authToken', result.data.token, { expires: 1 });
-                
-                // Save user data
+
                 const userData = {
                     name: result.data.name || 'Admin Bendahara',
                     username: username,

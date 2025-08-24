@@ -1,4 +1,4 @@
-// src/services/barangService.js
+
 import { endpoints } from "@/config/api";
 
 if (!endpoints) {
