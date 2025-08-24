@@ -713,17 +713,12 @@ export default function PengecekanPage() {
       printFrame.contentDocument.write(`
         <html>
           <head>
-            <title>Laporan Pengecekan Inventaris</title>
             <style>
               body { 
                 font-family: 'Times New Roman', serif; 
                 font-size: 12pt;
                 line-height: 1.5; 
                 margin: 20px;
-              }
-              @page { margin: 20mm; }
-              @media print {
-                body { margin: 0; }
               }
             </style>
           </head>
@@ -737,7 +732,7 @@ export default function PengecekanPage() {
       printFrame.contentWindow.focus();
       printFrame.contentWindow.print();
       
-      setMessage("🖨️ Dialog print telah dibuka. Silakan pilih printer dan cetak laporan.");
+      setMessage("Dialog print telah dibuka. Silakan pilih printer dan cetak laporan.");
       setSnackbarOpen(true);
       
       setTimeout(() => {
