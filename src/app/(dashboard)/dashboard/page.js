@@ -38,6 +38,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import SettingsIcon from "@mui/icons-material/Settings";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LockIcon from "@mui/icons-material/Lock";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import SparklineIcon from "@mui/icons-material/ShowChart";
@@ -48,6 +49,7 @@ import BorrowHistoryTable from "@/components/dashboard/BorrowHistoryTable"; // R
 import { endpoints } from "@/config/api"; // Restored original import
 import { alpha, createTheme, ThemeProvider } from "@mui/material/styles";
 import PasswordDialog from "@/components/PasswordDialog"; // Restored original import
+import Cookies from "js-cookie";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Enhanced StatCard Component with Premium Styling
@@ -363,7 +365,13 @@ export default function Dashboard() {
   });
   const [anchorEl, setAnchorEl] = useState(null);
   const [passwordDialog, setPasswordDialog] = useState(false);
+  const [createUserDialog, setCreateUserDialog] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    nra: "",
+    password: "",
+  });
+  const [createUserLoading, setCreateUserLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -415,6 +423,56 @@ export default function Dashboard() {
   const handlePasswordUpdate = () => {
     setPasswordDialog(true);
     handleMenuClose();
+  };
+
+  const handleCreateUser = () => {
+    setCreateUserDialog(true);
+    handleMenuClose();
+  };
+
+  const handleCreateUserSubmit = async () => {
+    if (!newUserData.nra || !newUserData.password) {
+      setSnackbar({
+        open: true,
+        message: "NRA dan Password harus diisi",
+        severity: "error",
+      });
+      return;
+    }
+
+    try {
+      setCreateUserLoading(true);
+      const response = await fetch(endpoints.ADMIN_CREATE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("authToken")}`,
+        },
+        body: JSON.stringify(newUserData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.code === 200) {
+        setSnackbar({
+          open: true,
+          message: result.message || "User berhasil dibuat",
+          severity: "success",
+        });
+        setCreateUserDialog(false);
+        setNewUserData({ nra: "", password: "" });
+      } else {
+        throw new Error(result.message || "Gagal membuat user");
+      }
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.message || "Terjadi kesalahan saat membuat user",
+        severity: "error",
+      });
+    } finally {
+      setCreateUserLoading(false);
+    }
   };
 
   return (
@@ -592,6 +650,17 @@ export default function Dashboard() {
                     <LockIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                     Update Password
                   </MenuItem>
+                  <MenuItem
+                    onClick={handleCreateUser}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    <PersonAddIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                    Create User
+                  </MenuItem>
                 </Menu>
 
                 {/* Password Dialog Component */}
@@ -599,6 +668,100 @@ export default function Dashboard() {
                   open={passwordDialog}
                   setOpen={setPasswordDialog}
                 />
+
+                {/* Create User Dialog */}
+                <Dialog
+                  open={createUserDialog}
+                  onClose={() => setCreateUserDialog(false)}
+                  maxWidth="sm"
+                  fullWidth
+                  PaperProps={{
+                    sx: {
+                      borderRadius: 2,
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+                    },
+                  }}
+                >
+                  <DialogTitle
+                    sx={{
+                      pb: 1,
+                      fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                      fontWeight: 600,
+                      color: "text.primary",
+                    }}
+                  >
+                    Buat User Baru
+                  </DialogTitle>
+                  <DialogContent sx={{ pt: 2 }}>
+                    <Stack spacing={3}>
+                      <TextField
+                        fullWidth
+                        label="NRA"
+                        value={newUserData.nra}
+                        onChange={(e) =>
+                          setNewUserData((prev) => ({
+                            ...prev,
+                            nra: e.target.value,
+                          }))
+                        }
+                        placeholder="Contoh: 1324013"
+                        inputProps={{
+                          inputMode: "numeric",
+                          pattern: "[0-9]*",
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 2,
+                          },
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Password"
+                        type="password"
+                        value={newUserData.password}
+                        onChange={(e) =>
+                          setNewUserData((prev) => ({
+                            ...prev,
+                            password: e.target.value,
+                          }))
+                        }
+                        placeholder="Masukkan password"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 2,
+                          },
+                        }}
+                      />
+                    </Stack>
+                  </DialogContent>
+                  <DialogActions sx={{ p: 3, pt: 2 }}>
+                    <Button
+                      onClick={() => {
+                        setCreateUserDialog(false);
+                        setNewUserData({ nra: "", password: "" });
+                      }}
+                      variant="outlined"
+                      sx={{
+                        borderRadius: 2,
+                        px: 3,
+                      }}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      onClick={handleCreateUserSubmit}
+                      variant="contained"
+                      disabled={createUserLoading}
+                      sx={{
+                        borderRadius: 2,
+                        px: 3,
+                      }}
+                    >
+                      {createUserLoading ? "Membuat..." : "Buat User"}
+                    </Button>
+                  </DialogActions>
+                </Dialog>
               </Box>
 
               {/* Stats Grid */}

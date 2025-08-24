@@ -5,6 +5,7 @@ export const API_BASE_URL = "https://backend-inventaris-production.up.railway.ap
 export const endpoints = {
   // Admin endpoints
   ADMIN_LOGIN: `${API_BASE_URL}api/user/login`,
+  ADMIN_CREATE: `${API_BASE_URL}api/user/createusers`,
   ADMIN_UPDATE: `${API_BASE_URL}api/user/changepassword`,
 
   // Barang / Inventaris endpoints

@@ -9,7 +9,7 @@ const CATEGORIES = [
   "Lainnya"
 ];
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -52,7 +52,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { jsPDF } from "jspdf";
+import CloseIcon from "@mui/icons-material/Close";
 import { getBarangTersedia } from "@/services/peminjamanService";
 import {
   startReport,
@@ -66,6 +66,165 @@ import {
 import { API_BASE_URL } from "@/config/api";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Image from "next/image";
+
+// Fungsi untuk memformat tanggal ke format Indonesia
+const formatTanggalIndonesia = (tanggal) => {
+  if (!tanggal) return "...........................";
+  const date = new Date(tanggal);
+  if (isNaN(date.getTime())) return "...........................";
+  const bulan = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  ];
+  return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+const safeString = (value) => {
+  if (value == null) return "...........................";
+  if (typeof value === "object") {
+    return value.name ? String(value.name) : "...........................";
+  }
+  return String(value);
+};
+
+// Template untuk Laporan Pengecekan Inventaris
+const laporanTemplate = (data) => `
+  <div style="font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; max-width: 800px; margin: 0 auto; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; justify-content: center;">
+        <img src="/images/coconut-logo.png" alt="COCONUT Logo" style="width: 70px; height: auto; margin-right: 20px;" />
+        <div>
+          <h2 style="margin: 0; font-size: 14pt;">COMPUTER CLUB ORIENTED NETWORK, UTILITY AND TECHNOLOGY (COCONUT)</h2>
+          <p style="margin: 0; font-size: 10pt;">Jl. Monumen Emmy Saelan III No. 70 Karunrung, Kec. Rappocini, Makassar</p>
+          <p style="margin: 0; font-size: 10pt;">Telp. 085240791254/0895801262897, Website: www.coconut.or.id, Email: hello@coconut.or.id</p>
+        </div>
+      </div>
+      <!-- Tiga garis horizontal -->
+        <div style="margin-top: 10px; margin-bottom: 10px;">
+          <hr style="height:0;border:none;border-top:1px solid #000;margin:0;" />
+          <hr style="height:0;border:none;border-top:3px solid #000;margin:2px 0;" />
+          <hr style="height:0;border:none;border-top:1px solid #000;margin:0;" />
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin: 20px 0;">
+      <h3 style="margin: 0; font-size: 16pt; text-decoration: underline;">LAPORAN PENGECEKAN INVENTARIS BULANAN</h3>
+    </div>
+    
+    <div style="margin: 20px 0;">
+      <table style="width: 100%; font-size: 12pt; margin-bottom: 20px;">
+        <tr>
+          <td style="width: 120px;">Petugas</td>
+          <td style="width: 20px;">:</td>
+          <td>${safeString(data.petugas)}</td>
+          <td style="width: 120px;">Item Dicek</td>
+          <td style="width: 20px;">:</td>
+          <td>${data.itemsDicek || 0}</td>
+        </tr>
+        <tr>
+          <td>Tanggal</td>
+          <td>:</td>
+          <td>${formatTanggalIndonesia(data.tanggal)}</td>
+          <td>Kondisi Baik</td>
+          <td>:</td>
+          <td>${data.kondisiBaik || 0}</td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td>:</td>
+          <td>${safeString(data.status).toUpperCase()}</td>
+          <td>Kondisi Rusak</td>
+          <td>:</td>
+          <td>${data.kondisiRusak || 0}</td>
+        </tr>
+        <tr>
+          <td>Total Item</td>
+          <td>:</td>
+          <td>${data.totalItem || 0}</td>
+          <td>Hilang</td>
+          <td>:</td>
+          <td>${data.hilang || 0}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div style="margin: 20px 0;">
+      <h4 style="margin: 10px 0; color: #2e7d32;">BARANG YANG SUDAH DICEK</h4>
+      <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+        <thead>
+          <tr style="background-color: #46a3ba; color: white;">
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">No</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: left;">Nama Barang</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Gambar</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Kondisi</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: left;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.checkedItems?.map((item, index) => `
+            <tr style="${index % 2 === 1 ? 'background-color: #f5f5f5;' : ''}">
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
+              <td style="border: 1px solid #000; padding: 6px;">${safeString(item.Namabarang || item.nama)}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">
+                ${item.image_url ? `<img src='${item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL}${item.image_url}`}' alt='Gambar' style='max-width:90px;max-height:90px;object-fit:contain;' />` : '-'}
+              </td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; color: ${
+                item.kondisi === 'baik' ? '#2e7d32' : 
+                item.kondisi === 'rusak' ? '#f57c00' : 
+                item.kondisi === 'hilang' ? '#d32f2f' : '#000'
+              }; font-weight: bold;">${safeString(item.kondisi).toUpperCase()}</td>
+              <td style="border: 1px solid #000; padding: 6px;">${safeString(item.keterangan)}</td>
+            </tr>
+          `).join('') || '<tr><td colspan="5" style="border: 1px solid #000; padding: 12px; text-align: center; color: #666;">Tidak ada barang yang sudah dicek</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+    
+    ${data.uncheckedItems?.length > 0 ? `
+    <div style="margin: 20px 0;">
+      <h4 style="margin: 10px 0; color: #d32f2f;">BARANG YANG BELUM DICEK</h4>
+      <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+        <thead>
+          <tr style="background-color: #f44336; color: white;">
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">No</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: left;">Nama Barang</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Gambar</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.uncheckedItems.map((item, index) => `
+            <tr style="${index % 2 === 1 ? 'background-color: #fff5f5;' : ''}">
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
+              <td style="border: 1px solid #000; padding: 6px;">${safeString(item.Namabarang || item.nama)}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">
+                ${item.image_url ? `<img src='${item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL}${item.image_url}`}' alt='Gambar' style='max-width:90px;max-height:90px;object-fit:contain;' />` : '-'}
+              </td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center; color: #d32f2f; font-weight: bold;">BELUM DICEK</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    ` : ''}
+    
+    <div style="margin-top: 60px; text-align: right;">
+      <p style="margin: 0;">Makassar, ${formatTanggalIndonesia(new Date())}</p>
+      <p style="margin: 10px 0; font-weight: bold;">Petugas Pengecekan,</p>
+      <p style="margin-top: 60px; font-weight: bold; text-decoration: underline;">${safeString(data.petugas)}</p>
+    </div>
+    <div style="
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      margin: 10px; 
+      font-size: 8pt; 
+      color: #666;
+    ">
+    <p style="margin: 0;">Dicetak pada: ${new Date().toLocaleString("id-ID")}</p>
+    <p style="margin: 0;">Sistem Inventaris COCONUT</p>
+  </div>
+`;
 
 export default function PengecekanPage() {
   const [petugas, setPetugas] = useState("");
@@ -92,6 +251,11 @@ export default function PengecekanPage() {
   const [viewedItem, setViewedItem] = useState(null);
   const [openCheckDialog, setOpenCheckDialog] = useState(false);
   const [openWorkspaceDialog, setOpenWorkspaceDialog] = useState(false);
+  
+  // State untuk dialog print dan preview
+  const [viewContentOpen, setViewContentOpen] = useState(false);
+  const [viewContent, setViewContent] = useState("");
+  const printRef = useRef(null);
 
   // Update state untuk menyimpan data asli
   const [originalBarangList, setOriginalBarangList] = useState([]);
@@ -461,6 +625,12 @@ export default function PengecekanPage() {
       setOpenCheckDialog(false);
       return;
     }
+    // Validasi semua field wajib diisi
+    if (!formData.inventaris_id || !formData.kondisi || !formData.keterangan) {
+      setError("Semua field wajib diisi!");
+      setSnackbarOpen(true);
+      return;
+    }
     if (editIndex !== null) {
       const checkId = barang[editIndex].checkId;
       if (checkId) {
@@ -476,173 +646,93 @@ export default function PengecekanPage() {
     setOpenCheckDialog(false);
   };
 
-  const generatePDF = async () => {
+  const generatePDF = () => {
     try {
-      const doc = new jsPDF();
+      // Siapkan data untuk template
+      const selectedReportData = reports.find(r => r.id === reportId);
+      const checkedItems = barang.filter(item => item.checked);
+      const uncheckedItems = barang.filter(item => !item.checked);
+      
+      const baikCount = checkedItems.filter(item => item.kondisi === "baik").length;
+      const rusakCount = checkedItems.filter(item => item.kondisi === "rusak").length;
+      const hilangCount = checkedItems.filter(item => item.kondisi === "hilang").length;
 
-      // Set dokumen properties
-      doc.setProperties({
-        title: `Laporan Pengecekan ${selectedReport?.kode_report || "Unknown"}`,
-        subject: "Laporan Pengecekan Inventaris",
-        author: "Sistem Inventaris",
-      });
+      const reportData = {
+        petugas: selectedReportData?.petugas || petugas,
+        tanggal: selectedReportData?.tanggal_laporan || new Date(),
+        status: selectedReportData?.status || "DRAFT",
+        totalItem: barang.length,
+        itemsDicek: checkedItems.length,
+        kondisiBaik: baikCount,
+        kondisiRusak: rusakCount,
+        hilang: hilangCount,
+        checkedItems: checkedItems,
+        uncheckedItems: uncheckedItems.length > 0 ? uncheckedItems : null
+      };
 
-      // Header
-      doc.setFillColor(30, 136, 229);
-      doc.rect(0, 0, 210, 30, "F");
-      doc.setFontSize(20);
-      doc.setTextColor(255, 255, 255);
-      doc.text("LAPORAN PENGECEKAN INVENTARIS", 105, 20, { align: "center" });
-
-      // Metadata laporan (dipindahkan ke bawah header untuk visibilitas)
-      console.log("Rendering metadata:", {
-        kode_report: selectedReport?.kode_report,
-        petugas: selectedReport?.petugas,
-        tanggal_report: formatDateDisplay(selectedReport?.tanggal_report),
-        kode_petugas: selectedReport?.kode_petugas,
-      }); // Log debug sebelum rendering
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0); // Atur warna teks ke hitam untuk visibilitas
-      doc.text(`Kode Report: ${selectedReport?.kode_report || "-"}`, 15, 35);
-      doc.text(`Petugas: ${selectedReport?.petugas || "-"}`, 15, 40);
-      doc.text(
-        `Tanggal Cek: ${
-          formatDateDisplay(selectedReport?.tanggal_report) || "-"
-        }`,
-        15,
-        45
-      );
-      let y = 60;
-
-      // Tabel barang yang sudah dicek
-      doc.setFontSize(14);
-      doc.setTextColor(30, 136, 229);
-      doc.text("BARANG YANG SUDAH DICEK", 15, y);
-
-      const checkedItems = barang.filter((item) => item.checked);
-      console.log("Checked items for PDF:", checkedItems); // Log debug
-
-      y += 5; // Tambah jarak sebelum tabel atau pesan
-      if (checkedItems.length === 0) {
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text("Tidak ada barang yang sudah dicek.", 15, y + 5);
-        y += 15; // Perbarui y setelah pesan
-      } else {
-        doc.setFillColor(224, 242, 241);
-        doc.rect(15, y, 180, 10, "F");
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, "bold");
-        doc.text("NO", 20, y + 7);
-        doc.text("NAMA BARANG", 40, y + 7);
-        doc.text("KONDISI", 100, y + 7);
-        doc.text("KETERANGAN", 130, y + 7);
-
-        doc.setFont(undefined, "normal");
-        y += 10; // Pindah ke baris pertama tabel
-        checkedItems.forEach((item, index) => {
-          if (y > 250) {
-            doc.addPage();
-            y = 20;
-            doc.setFillColor(224, 242, 241);
-            doc.rect(15, y, 180, 10, "F");
-            doc.setFont(undefined, "bold");
-            doc.text("NO", 20, y + 7);
-            doc.text("NAMA BARANG", 40, y + 7);
-            doc.text("KONDISI", 100, y + 7);
-            doc.text("KETERANGAN", 130, y + 7);
-            y += 15;
-          }
-
-          doc.text((index + 1).toString(), 20, y + 7);
-          doc.text(String(item.nama || "-"), 40, y + 7, { maxWidth: 50 });
-          doc.text(String(item.kondisi || "-").toUpperCase(), 100, y + 7);
-          doc.text(String(item.keterangan || "-"), 130, y + 7, {
-            maxWidth: 60,
-          });
-          y += 10;
-        });
-        y += 5; // Tambah jarak setelah tabel
-      }
-
-      // Tabel barang yang belum dicek
-      doc.setFontSize(14);
-      doc.setTextColor(229, 57, 53);
-      doc.text("BARANG YANG BELUM DICEK", 15, y + 10);
-
-      const uncheckedItems = barang.filter((item) => !item.checked);
-      console.log("Unchecked items for PDF:", uncheckedItems); // Log debug
-
-      y += 15; // Tambah jarak sebelum tabel atau pesan
-      if (uncheckedItems.length === 0) {
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text("Tidak ada barang yang belum dicek.", 15, y + 5);
-        y += 15; // Perbarui y setelah pesan
-      } else {
-        doc.setFillColor(255, 235, 238);
-        doc.rect(15, y, 180, 10, "F");
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, "bold");
-        doc.text("NO", 20, y + 7);
-        doc.text("NAMA BARANG", 40, y + 7);
-        doc.text("STATUS", 100, y + 7);
-
-        doc.setFont(undefined, "normal");
-        y += 10; // Pindah ke baris pertama tabel
-        uncheckedItems.forEach((item, index) => {
-          if (y > 250) {
-            doc.addPage();
-            y = 20;
-            doc.setFillColor(255, 235, 238);
-            doc.rect(15, y, 180, 10, "F");
-            doc.setFont(undefined, "bold");
-            doc.text("NO", 20, y + 7);
-            doc.text("NAMA BARANG", 40, y + 7);
-            doc.text("STATUS", 100, y + 7);
-            y += 15;
-          }
-
-          doc.text((index + 1).toString(), 20, y + 7);
-          doc.text(String(item.nama || "-"), 40, y + 7, { maxWidth: 50 });
-          doc.text("BELUM DICEK", 100, y + 7);
-          y += 10;
-        });
-        y += 5; // Tambah jarak setelah tabel
-      }
-
-      // Footer
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(
-          `Sistem Inventaris - Halaman ${i} dari ${pageCount}`,
-          105,
-          290,
-          { align: "center" }
-        );
-        doc.text(
-          `Dicetak pada: ${new Date().toLocaleString("id-ID")}`,
-          105,
-          295,
-          {
-            align: "center",
-          }
-        );
-      }
-
-      doc.save(
-        `Laporan_Pengecekan_${selectedReport?.kode_report || reportId}.pdf`
-      );
-      setMessage("PDF berhasil diunduh");
+      // Generate HTML content
+      const content = laporanTemplate(reportData);
+      setViewContent(content);
+      setViewContentOpen(true);
+      
+      setMessage("Laporan berhasil digenerate. Silakan print atau simpan.");
       setSnackbarOpen(true);
-    } catch (err) {
-      console.error("Error generating PDF:", err);
-      setError(`Gagal membuat PDF: ${err.message || "Terjadi kesalahan"}`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      setError(`Gagal membuat laporan: ${error.message || "Terjadi kesalahan"}`);
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handlePrint = () => {
+    if (!viewContent) {
+      setError("Konten laporan tidak tersedia. Silakan generate laporan terlebih dahulu.");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    try {
+      const printFrame = document.createElement("iframe");
+      printFrame.style.position = "absolute";
+      printFrame.style.left = "-9999px";
+      document.body.appendChild(printFrame);
+      
+      printFrame.contentDocument.write(`
+        <html>
+          <head>
+            <title>Laporan Pengecekan Inventaris</title>
+            <style>
+              body { 
+                font-family: 'Times New Roman', serif; 
+                font-size: 12pt;
+                line-height: 1.5; 
+                margin: 20px;
+              }
+              @page { margin: 20mm; }
+              @media print {
+                body { margin: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${viewContent}
+          </body>
+        </html>
+      `);
+      
+      printFrame.contentDocument.close();
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+      
+      setMessage("🖨️ Dialog print telah dibuka. Silakan pilih printer dan cetak laporan.");
+      setSnackbarOpen(true);
+      
+      setTimeout(() => {
+        document.body.removeChild(printFrame);
+      }, 1000);
+    } catch (error) {
+      console.error("Error printing:", error);
+      setError("Gagal membuka dialog print. Silakan coba lagi.");
       setSnackbarOpen(true);
     }
   };
@@ -1465,6 +1555,66 @@ export default function PengecekanPage() {
             </Button>
             <Button variant="contained" onClick={handleSaveEdit}>
               Simpan
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog Preview Laporan */}
+        <Dialog
+          open={viewContentOpen}
+          onClose={() => setViewContentOpen(false)}
+          maxWidth="lg"
+          fullWidth
+        >
+          <DialogTitle>
+            Preview Laporan Pengecekan Inventaris
+            <IconButton
+              aria-label="close"
+              onClick={() => setViewContentOpen(false)}
+              sx={{ position: "absolute", right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            <div
+              dangerouslySetInnerHTML={{ __html: viewContent }}
+              style={{
+                padding: "20px",
+                fontFamily: "'Times New Roman', serif",
+                fontSize: "12pt",
+                lineHeight: 1.5,
+              }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ p: 2, gap: 1, justifyContent: "flex-end" }}>
+            <Button
+              onClick={() => setViewContentOpen(false)}
+              variant="outlined"
+              sx={{
+                color: "#666",
+                borderColor: "#ccc",
+                "&:hover": {
+                  borderColor: "#999",
+                  backgroundColor: "#f5f5f5",
+                },
+              }}
+            >
+              Tutup
+            </Button>
+            <Button
+              onClick={handlePrint}
+              variant="contained"
+              startIcon={<PrintIcon />}
+              sx={{
+                backgroundColor: "#2196f3",
+                color: "white",
+                "&:hover": { backgroundColor: "#1976d2" },
+                "&:active": { backgroundColor: "#1565c0" },
+                fontWeight: 600,
+              }}
+            >
+              Print Laporan
             </Button>
           </DialogActions>
         </Dialog>
