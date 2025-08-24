@@ -385,23 +385,37 @@ export default function PeminjamanContent() {
   // Template HTML untuk laporan peminjaman
   const laporanPeminjamanTemplate = (data) => `
   <div style="font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; max-width: 800px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 20px;">
-      <div style="display: flex; align-items: center; justify-content: center;">
-        <img src="/images/coconut-logo.png" alt="COCONUT Logo" style="width: 70px; height: auto; margin-right: 20px;" />
-        <div>
-          <h2 style="margin: 0; font-size: 14pt;">COMPUTER CLUB ORIENTED NETWORK, UTILITY AND TECHNOLOGY (COCONUT)</h2>
-          <p style="margin: 0; font-size: 10pt;">Jl. Monumen Emmy Saelan III No. 70 Karunrung, Kec. Rappocini, Makassar</p>
-          <p style="margin: 0; font-size: 10pt;">Telp. 085240791254/0895801262897, Website: www.coconut.or.id, Email: hello@coconut.or.id</p>
+    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+      <!-- Logo lebih kecil -->
+      <img src="/images/coconut-logo.png" alt="COCONUT Logo" 
+          style="width: 60px; height: auto; margin-right: 15px;" />
+
+      <!-- Semua teks sejajar dengan logo -->
+      <div style="text-align: center; flex: 1;">
+        <div style="font-size: 10pt; font-weight: bold; margin-bottom: 0;">
+          COMPUTER CLUB ORIENTED NETWORK, UTILITY AND TECHNOLOGY
+        </div>
+        <div style="font-size: 10pt; font-weight: bold; margin-bottom: 6px;">
+          (COCONUT)
+        </div>
+        <div style="font-size: 10pt; margin-bottom: 2px;">
+          Sekretariat: Jl. Monumen Emmy Saelan III No. 70 Karunrung, Kec. Rappocini, Makassar
+        </div>
+        <div style="font-size: 10pt; margin-bottom: 0;">
+          Telp. 085240791254/0895801262897, Website: 
+          <a href="https://www.coconut.or.id" style="color: #0000EE; text-decoration: underline;">
+            www.coconut.or.id
+          </a>, Email: hello@coconut.or.id
         </div>
       </div>
-      <div style="margin-top: 10px; margin-bottom: 10px;">
-        <hr style="height:0;border:none;border-top:1px solid #000;margin:0;" />
-        <hr style="height:0;border:none;border-top:3px solid #000;margin:2px 0;" />
-        <hr style="height:0;border:none;border-top:1px solid #000;margin:0;" />
-      </div>
+    </div>
+    <div style="margin-top: 10px; margin-bottom: 10px;">
+      <hr style="height:0;border:none;border-top:1px solid #000;margin:0;" />
+      <hr style="height:0;border:none;border-top:2px solid #000;margin:2px 0;" />
+      <hr style="height:0;border:none;border-top:1px solid #000;margin:0;" />
     </div>
     <div style="text-align: center; margin: 20px 0;">
-      <h3 style="margin: 0; font-size: 16pt; text-decoration: underline;">LAPORAN PEMINJAMAN BARANG INVENTARIS</h3>
+      <h3 style="margin: 0; font-size: 16pt;">LAPORAN PEMINJAMAN BARANG INVENTARIS</h3>
     </div>
     <div style="margin: 20px 0;">
       <table style="width: 100%; font-size: 12pt; margin-bottom: 20px;">

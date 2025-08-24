@@ -688,6 +688,7 @@ export default function Dashboard() {
                       fontSize: { xs: "1.25rem", sm: "1.5rem" },
                       fontWeight: 600,
                       color: "text.primary",
+                      mb: 2, // Tambahkan margin bottom agar ada jarak
                     }}
                   >
                     Buat User Baru
