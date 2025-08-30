@@ -34,7 +34,7 @@ export default function DashboardDrawer({ open, onClose, variant }) {
       height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
-      bgcolor: 'rgba(255, 255, 255, 0.95)', // More transparent background
+      bgcolor: 'rgba(255, 255, 255, 0.95)',
       position: 'relative',
       overflow: 'hidden',
       '&::before': {
@@ -42,20 +42,19 @@ export default function DashboardDrawer({ open, onClose, variant }) {
         position: 'absolute',
         bottom: '5%',
         right: '5%',
-        width: '70%', // Smaller width for better visibility
-        height: '70%', // Smaller height for better visibility
+        width: '70%',
+        height: '70%',
         backgroundImage: "url('/images/coconut-logo.png')",
         backgroundRepeat: 'no-repeat',
         backgroundPosition: 'bottom right',
         backgroundSize: 'contain',
-        opacity: 0.15, // Increased opacity
-        transform: 'rotate(-5deg)', // Slight rotation for style
+        opacity: 0.15,
+        transform: 'rotate(-5deg)', 
         pointerEvents: 'none',
         zIndex: 0,
-        filter: 'grayscale(0.3)', // Less grayscale for more color
+        filter: 'grayscale(0.3)',
       }
     }}>
-      {/* Header Section with Coconut Computer Club Logo */}
       <Box
         sx={{
           p: 3,
@@ -121,7 +120,6 @@ export default function DashboardDrawer({ open, onClose, variant }) {
         </Typography>
       </Box>
 
-      {/* Navigation Menu */}
       <List sx={{ 
         px: 2.5, 
         py: 3, 
@@ -129,11 +127,11 @@ export default function DashboardDrawer({ open, onClose, variant }) {
         position: 'relative',
         zIndex: 2,
         '& .MuiListItem-root': {
-          backgroundColor: 'rgba(255, 255, 255, 0.4)', // More transparent menu items
-          backdropFilter: 'blur(8px)', // Enhanced blur effect
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+          backdropFilter: 'blur(8px)', 
           mb: 1,
           border: '1px solid',
-          borderColor: 'rgba(255, 255, 255, 0.1)', // Subtle border
+          borderColor: 'rgba(255, 255, 255, 0.1)', 
         }
       }}>
         {menuItems.map((item) => (
@@ -161,7 +159,7 @@ export default function DashboardDrawer({ open, onClose, variant }) {
           >
             <ListItemIcon sx={{ 
               color: 'inherit', 
-              minWidth: 45, // Increased icon width
+              minWidth: 45,
               fontSize: '1.2rem'
             }}>
               {item.icon}
@@ -177,14 +175,13 @@ export default function DashboardDrawer({ open, onClose, variant }) {
         ))}
       </List>
 
-      {/* Updated Logout Button with more transparency */}
       <Box sx={{ 
         p: 3, 
         borderTop: '1px solid',
         borderColor: 'rgba(255, 255, 255, 0.1)',
         position: 'relative',
         zIndex: 2,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)' // More transparent background
+        backgroundColor: 'rgba(255, 255, 255, 0.2)'
       }}>
         <Button
           fullWidth
@@ -199,12 +196,12 @@ export default function DashboardDrawer({ open, onClose, variant }) {
             fontSize: '0.9rem',
             fontWeight: 500,
             color: 'text.secondary',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)', // More transparent button
-            backdropFilter: 'blur(12px)', // Enhanced blur
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(12px)', 
             border: '1px solid',
             borderColor: 'rgba(255, 255, 255, 0.1)',
             '&:hover': {
-              backgroundColor: 'rgba(255, 59, 59, 0.08)', // Subtle red tint
+              backgroundColor: 'rgba(255, 59, 59, 0.08)', 
               color: 'error.main',
               transform: 'translateX(4px)',
               borderColor: 'rgba(255, 59, 59, 0.2)'
@@ -229,7 +226,7 @@ export default function DashboardDrawer({ open, onClose, variant }) {
       sx={{
         display: { xs: 'block' },
         '& .MuiDrawer-paper': {
-          width: 320, // Increased drawer width
+          width: 320, 
           boxSizing: 'border-box',
           border: 'none',
           boxShadow: variant === 'temporary' ? 

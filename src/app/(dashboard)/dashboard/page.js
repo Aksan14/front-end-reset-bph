@@ -694,7 +694,7 @@ export default function Dashboard() {
                     Buat User Baru
                   </DialogTitle>
                   <DialogContent sx={{ pt: 2 }}>
-                    <Stack spacing={3}>
+                    <Stack spacing={3} marginTop={2}>
                       <TextField
                         fullWidth
                         label="NRA"
