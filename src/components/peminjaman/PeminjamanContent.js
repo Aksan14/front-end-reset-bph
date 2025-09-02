@@ -274,6 +274,18 @@ export default function PeminjamanContent() {
         tanggal_pinjam: formatDateForAPI(formData.tanggal_pinjam),
         rencana_kembali: formatDateForAPI(formData.rencana_kembali),
       });
+      
+      // Reset form data setelah berhasil
+      setFormData({
+        barang_id: "",
+        nama_peminjam: "",
+        tanggal_pinjam: "",
+        rencana_kembali: "",
+        keterangan: "",
+      });
+      setSelectedBarang(null);
+      setError(""); // Clear any previous error messages
+      
       setOpenFormDialog(false);
       await Promise.all([
         fetchBarangTersedia(),
