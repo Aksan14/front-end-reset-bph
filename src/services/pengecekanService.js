@@ -112,3 +112,41 @@ export const finalizeReport = async (reportId) => {
     throw new Error(error.response?.data?.message || error.message || "Network error");
   }
 };
+
+// Fungsi untuk menyimpan snapshot data barang saat laporan dimulai
+export const saveReportSnapshot = async (reportId, snapshotData) => {
+  try {
+    // Gunakan localStorage sebagai fallback jika backend belum support
+    const snapshotKey = `report_snapshot_${reportId}`;
+    localStorage.setItem(snapshotKey, JSON.stringify(snapshotData));
+    
+    // Jika ada endpoint backend untuk snapshot, bisa ditambahkan di sini
+    // const res = await axios.post(endpoints.REPORT_SAVE_SNAPSHOT(reportId), snapshotData);
+    
+    return { success: true, message: "Snapshot saved successfully" };
+  } catch (error) {
+    console.warn("Failed to save snapshot to backend, using localStorage only");
+    return { success: false, message: "Failed to save snapshot" };
+  }
+};
+
+// Fungsi untuk mengambil snapshot data barang
+export const getReportSnapshot = async (reportId) => {
+  try {
+    // Coba ambil dari localStorage dulu
+    const snapshotKey = `report_snapshot_${reportId}`;
+    const localSnapshot = localStorage.getItem(snapshotKey);
+    
+    if (localSnapshot) {
+      return JSON.parse(localSnapshot);
+    }
+    
+    // Jika ada endpoint backend untuk snapshot, bisa ditambahkan di sini
+    // const res = await axios.get(endpoints.REPORT_GET_SNAPSHOT(reportId));
+    
+    return null;
+  } catch (error) {
+    console.warn("Failed to get snapshot:", error);
+    return null;
+  }
+};

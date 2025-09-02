@@ -36,4 +36,39 @@ export const borrowService = {
       throw error;
     }
   },
+
+  async getAllBorrows() {
+    try {
+      const response = await fetch(endpoints.PEMINJAMAN_LIST, {
+        method: "GET",
+        headers: {
+          "ngrok-skip-browser-warning": "true", 
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Fetch error:", { status: response.status, text: errorText });
+        throw new Error(`Gagal mengambil data peminjaman: ${errorText || "Unknown error"}`);
+      }
+      const result = await response.json();
+      if (result.code === 200 && result.status === "OK") {
+        // Return all borrows, not just the recent ones
+        return result.data.map((item) => ({
+          id: item.id,
+          tanggalPinjam: item.tgl_pinjam || "-",
+          namaPeminjam: item.nama_peminjam || "-",
+          namaBarang: item.barang_nama || "-",
+          rencanaKembali: item.rencana_kembali || "-",
+          status: item.status || "-",
+          barangId: item.barang_id || null,
+        }));
+      } else {
+        throw new Error(result.message || "Gagal mengambil data peminjaman");
+      }
+    } catch (error) {
+      console.error("Error in getAllBorrows:", error);
+      throw error;
+    }
+  },
 };

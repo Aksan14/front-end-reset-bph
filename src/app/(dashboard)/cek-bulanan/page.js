@@ -53,6 +53,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CloseIcon from "@mui/icons-material/Close";
 import { getBarangTersedia } from "@/services/peminjamanService";
+import { borrowService } from "@/services/borrowService";
 import {
   startReport,
   getReports,
@@ -61,8 +62,10 @@ import {
   updateCheck,
   deleteCheck,
   finalizeReport,
+  getReportSnapshot,
+  saveReportSnapshot,
 } from "@/services/pengecekanService";
-import { API_BASE_URL } from "@/config/api";
+import { API_BASE_URL, endpoints } from "@/config/api";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Image from "next/image";
 
@@ -156,6 +159,14 @@ const laporanTemplate = (data) => `
           <td>:</td>
           <td>${data.hilang || 0}</td>
         </tr>
+        <tr>
+          <td>Barang Tersedia</td>
+          <td>:</td>
+          <td>${data.barangTersedia || 0} (Dicek: ${data.barangTersediaDicek || 0})</td>
+          <td>Barang Dipinjam</td>
+          <td>:</td>
+          <td>${data.barangDipinjam || 0} (Dicek: ${data.barangDipinjamDicek || 0})</td>
+        </tr>
       </table>
     </div>
     
@@ -166,6 +177,7 @@ const laporanTemplate = (data) => `
           <tr style="background-color: #46a3ba; color: white;">
             <th style="border: 1px solid #000; padding: 8px; text-align: center;">No</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: left;">Nama Barang</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Status Barang</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: center;">Gambar</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: center;">Kondisi</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: left;">Keterangan</th>
@@ -177,6 +189,12 @@ const laporanTemplate = (data) => `
               <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
               <td style="border: 1px solid #000; padding: 6px;">${safeString(item.Namabarang || item.nama)}</td>
               <td style="border: 1px solid #000; padding: 6px; text-align: center;">
+                <span style="color: ${item.isPinjam ? '#f57c00' : '#2e7d32'}; font-weight: bold;">
+                  ${item.isPinjam ? 'DIPINJAM' : 'TERSEDIA'}
+                </span>
+                ${item.isPinjam ? `<br><small>Peminjam: ${safeString(item.peminjam)}</small>` : ''}
+              </td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">
                 ${item.image_url ? `<img src='${item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL}${item.image_url}`}' alt='Gambar' style='max-width:90px;max-height:90px;object-fit:contain;' />` : '-'}
               </td>
               <td style="border: 1px solid #000; padding: 6px; text-align: center; color: ${
@@ -186,7 +204,7 @@ const laporanTemplate = (data) => `
               }; font-weight: bold;">${safeString(item.kondisi).toUpperCase()}</td>
               <td style="border: 1px solid #000; padding: 6px;">${safeString(item.keterangan)}</td>
             </tr>
-          `).join('') || '<tr><td colspan="5" style="border: 1px solid #000; padding: 12px; text-align: center; color: #666;">Tidak ada barang yang sudah dicek</td></tr>'}
+          `).join('') || '<tr><td colspan="6" style="border: 1px solid #000; padding: 12px; text-align: center; color: #666;">Tidak ada barang yang sudah dicek</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -199,6 +217,7 @@ const laporanTemplate = (data) => `
           <tr style="background-color: #f44336; color: white;">
             <th style="border: 1px solid #000; padding: 8px; text-align: center;">No</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: left;">Nama Barang</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Status Barang</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: center;">Gambar</th>
             <th style="border: 1px solid #000; padding: 8px; text-align: center;">Status</th>
           </tr>
@@ -209,9 +228,50 @@ const laporanTemplate = (data) => `
               <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
               <td style="border: 1px solid #000; padding: 6px;">${safeString(item.Namabarang || item.nama)}</td>
               <td style="border: 1px solid #000; padding: 6px; text-align: center;">
+                <span style="color: ${item.isPinjam ? '#f57c00' : '#2e7d32'}; font-weight: bold;">
+                  ${item.isPinjam ? 'DIPINJAM' : 'TERSEDIA'}
+                </span>
+                ${item.isPinjam ? `<br><small>Peminjam: ${safeString(item.peminjam)}</small>` : ''}
+              </td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">
                 ${item.image_url ? `<img src='${item.image_url.startsWith('http') ? item.image_url : `${API_BASE_URL}${item.image_url}`}' alt='Gambar' style='max-width:90px;max-height:90px;object-fit:contain;' />` : '-'}
               </td>
               <td style="border: 1px solid #000; padding: 6px; text-align: center; color: #d32f2f; font-weight: bold;">BELUM DICEK</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    ` : ''}
+    
+    ${data.barangPinjamInfo?.length > 0 ? `
+    <div style="margin: 20px 0;">
+      <h4 style="margin: 10px 0; color: #f57c00;">BARANG YANG SEDANG DIPINJAM</h4>
+      <p style="font-size: 10pt; margin: 5px 0; color: #666; font-style: italic;">
+        Catatan: Barang yang sedang dipinjam tidak dilakukan pengecekan fisik karena berada di luar lokasi inventaris.
+      </p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+        <thead>
+          <tr style="background-color: #ff9800; color: white;">
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">No</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: left;">Nama Barang</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Peminjam</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Tgl Pinjam</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Rencana Kembali</th>
+            <th style="border: 1px solid #000; padding: 8px; text-align: center;">Gambar</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.barangPinjamInfo.map((item, index) => `
+            <tr style="${index % 2 === 1 ? 'background-color: #fff3e0;' : ''}">
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${index + 1}</td>
+              <td style="border: 1px solid #000; padding: 6px;">${safeString(item.Namabarang)}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${safeString(item.peminjam)}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${formatTanggalIndonesia(item.tanggalPinjam)}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${formatTanggalIndonesia(item.rencanaKembali)}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">
+                ${item.Foto ? `<img src='${item.Foto.startsWith('http') ? item.Foto : `${API_BASE_URL}${item.Foto}`}' alt='Gambar' style='max-width:90px;max-height:90px;object-fit:contain;' />` : '-'}
+              </td>
             </tr>
           `).join('')}
         </tbody>
@@ -241,6 +301,7 @@ const laporanTemplate = (data) => `
 export default function PengecekanPage() {
   const [petugas, setPetugas] = useState("");
   const [barangList, setBarangList] = useState([]);
+  const [barangPinjam, setBarangPinjam] = useState([]); // State untuk barang dipinjam
   const [reports, setReports] = useState([]);
   const [reportId, setReportId] = useState(null);
   const [status, setStatus] = useState("draft");
@@ -298,20 +359,76 @@ export default function PengecekanPage() {
   const fetchBarangTersedia = async () => {
     try {
       setLoading(true);
-      const data = await getBarangTersedia();
-      // Transform the data to match the expected structure
-      const transformedData = data.map(item => ({
+      
+      // Ambil semua barang untuk referensi gambar
+      const allBarangResponse = await fetch(endpoints.BARANG_GET_ALL, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      let allBarangData = [];
+      if (allBarangResponse.ok) {
+        const allBarangResult = await allBarangResponse.json();
+        if (allBarangResult.code === 200) {
+          allBarangData = allBarangResult.data;
+        }
+      }
+      
+      // Ambil barang tersedia
+      const barangTersediaData = await getBarangTersedia();
+      
+      // Ambil barang yang dipinjam
+      const borrowedData = await borrowService.getAllBorrows();
+      
+      // Transform barang tersedia
+      const transformedBarangTersedia = barangTersediaData.map(item => ({
         id: item.id,
         Namabarang: item.nama_barang,
         Kategori: item.kategori,
         Satuan: item.satuan,
         Kondisi: item.kondisi,
-        Foto: item.foto
+        Foto: item.foto,
+        isPinjam: false,
+        status: 'tersedia'
       }));
       
-      setBarangList(transformedData);
-      setOriginalBarangList(transformedData); // Simpan data asli
-      setMessage("Data barang tersedia berhasil dimuat");
+      // Transform barang yang dipinjam - hanya untuk informasi, tidak untuk dicek
+      const transformedBarangPinjam = borrowedData
+        .filter(item => item.status === 'dipinjam') // Hanya barang yang masih dipinjam
+        .map(item => {
+          // Cari data barang dari semua barang berdasarkan barang_id untuk mendapat foto
+          const barangData = allBarangData.find(barang => {
+            return String(barang.id) === String(item.barangId);
+          });
+          
+          return {
+            id: `pinjam_${item.id}`, // ID unik untuk barang pinjam berdasarkan ID peminjaman
+            Namabarang: item.namaBarang,
+            Kategori: 'Dipinjam',
+            Satuan: 'unit',
+            Kondisi: 'dipinjam',
+            Foto: barangData ? (barangData.Foto || barangData.foto) : null, // Ambil foto dari data barang (coba keduanya)
+            isPinjam: true,
+            status: 'dipinjam',
+            peminjam: item.namaPeminjam,
+            tanggalPinjam: item.tanggalPinjam,
+            rencanaKembali: item.rencanaKembali,
+            canCheck: false // Tidak bisa dicek
+          };
+        });
+      
+      // Hanya gabungkan barang tersedia untuk pengecekan, barang dipinjam hanya untuk informasi
+      const barangForChecking = [...transformedBarangTersedia];
+      
+      setBarangList(barangForChecking);
+      setOriginalBarangList(barangForChecking); // Simpan data asli
+      
+      // Simpan data barang dipinjam terpisah untuk keperluan laporan
+      setBarangPinjam(transformedBarangPinjam);
+      
+      setMessage(`Data berhasil dimuat: ${transformedBarangTersedia.length} barang tersedia untuk dicek, ${transformedBarangPinjam.length} barang sedang dipinjam`);
       setSnackbarOpen(true);
     } catch (error) {
       console.error("Error fetching barang tersedia:", error);
@@ -353,6 +470,11 @@ export default function PengecekanPage() {
   const handleSearchChange = (value) => {
     setSearchQuery(value);
     filterBarang(value, selectedCategory);
+  };
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    filterBarang(searchQuery, category);
   };
 
   const handleSearch = async () => {
@@ -398,6 +520,19 @@ export default function PengecekanPage() {
     try {
       setLoading(true);
       const response = await startReport(petugas);
+      
+      // Simpan snapshot data barang saat laporan dimulai
+      try {
+        await saveReportSnapshot(response.data.id, {
+          barangList: originalBarangList,
+          timestamp: new Date().toISOString(),
+          petugas: petugas
+        });
+        console.log("Snapshot data saved for report:", response.data.id);
+      } catch (snapshotError) {
+        console.warn("Failed to save snapshot, proceeding without it:", snapshotError);
+      }
+      
       setReportId(response.data.id);
       setStatus("draft");
       setMessage(response.message || "Sesi pengecekan berhasil dimulai");
@@ -418,31 +553,57 @@ export default function PengecekanPage() {
       setReportId(reportId);
       setSelectedReport(response.data.report);
       setStatus(response.data.report.status);
+      
+      let barangDataToUse = barangList;
+      
+      // Jika laporan sudah final, gunakan data snapshot yang tersimpan
+      if (response.data.report.status === 'final') {
+        try {
+          const snapshotResponse = await getReportSnapshot(reportId);
+          if (snapshotResponse && snapshotResponse.barangList) {
+            barangDataToUse = snapshotResponse.barangList;
+            setBarangList(snapshotResponse.barangList);
+            setOriginalBarangList(snapshotResponse.barangList);
+            console.log("Using snapshot data for final report:", snapshotResponse);
+            setMessage("Menggunakan data snapshot untuk laporan final");
+          } else {
+            console.warn("No snapshot found for final report, using current data");
+            setMessage("Peringatan: Tidak ada snapshot data untuk laporan final");
+          }
+        } catch (snapshotError) {
+          console.warn("Failed to load snapshot data:", snapshotError);
+          setMessage("Peringatan: Gagal memuat snapshot data, menggunakan data terkini");
+        }
+      }
+      
       const enrichedChecks = (response.data.checks || []).map((check) => {
-        const item = barangList.find((item) => item.id === check.inventaris_id);
+        const item = barangDataToUse.find((item) => item.id === check.inventaris_id);
         return {
           ...check,
           nama: item ? item.Namabarang : `Item ${check.inventaris_id}`,
-          image_url: item
-            ? `${API_BASE_URL}${item.Foto}`
-            : `https://via.placeholder.com/50?text=Item+${check.inventaris_id}`,
+          image_url: item && item.Foto ? `${API_BASE_URL}${item.Foto}` : null,
           checked: true,
         };
       });
       console.log("Enriched checks:", enrichedChecks); // Log debug
-      const allBarang = barangList.map((item) => {
+      
+      const allBarang = barangDataToUse.map((item) => {
         const check = enrichedChecks.find((c) => c.inventaris_id === item.id);
         return {
           id: item.id,
           inventaris_id: item.id,
           nama: item.Namabarang || `Item ${item.id}`,
-          image_url: item.Foto
-            ? `${API_BASE_URL}${item.Foto}`
-            : `https://via.placeholder.com/50?text=Item+${item.id}`,
+          kategori: item.Kategori || "-",
+          image_url: item.Foto ? `${API_BASE_URL}${item.Foto}` : null,
           checked: !!check,
           checkId: check ? check.id : null,
           kondisi: check ? check.kondisi : "",
           keterangan: check ? check.keterangan : "",
+          isPinjam: item.isPinjam || false,
+          status: item.status || 'tersedia',
+          peminjam: item.peminjam || '',
+          tanggalPinjam: item.tanggalPinjam || '',
+          rencanaKembali: item.rencanaKembali || ''
         };
       });
       setBarang(allBarang);
@@ -468,9 +629,7 @@ export default function PengecekanPage() {
           inventaris_id: item.id,
           nama: item.Namabarang || `Item ${item.id}`,
           kategori: item.Kategori || "-",
-          image_url: item.Foto
-            ? `${API_BASE_URL}${item.Foto}`
-            : `https://via.placeholder.com/50?text=Item+${item.id}`,
+          image_url: item.Foto ? `${API_BASE_URL}${item.Foto}` : null,
           checked: existing ? existing.checked : false,
           checkId: existing ? existing.checkId : null,
           kondisi: existing ? existing.kondisi : "",
@@ -668,18 +827,29 @@ export default function PengecekanPage() {
       const baikCount = checkedItems.filter(item => item.kondisi === "baik").length;
       const rusakCount = checkedItems.filter(item => item.kondisi === "rusak").length;
       const hilangCount = checkedItems.filter(item => item.kondisi === "hilang").length;
+      
+      // Hitung statistik barang
+      const barangTersediaCount = barang.length; // Semua barang yang bisa dicek adalah barang tersedia
+      const barangDipinjamCount = barangPinjam.length; // Barang dipinjam dari state terpisah
+      const barangTersediaDicek = checkedItems.length;
+      const barangDipinjamDicek = 0; // Barang dipinjam tidak dicek
 
       const reportData = {
         petugas: selectedReportData?.petugas || petugas,
         tanggal: selectedReportData?.tanggal_laporan || new Date(),
         status: selectedReportData?.status || "DRAFT",
-        totalItem: barang.length,
+        totalItem: barangTersediaCount + barangDipinjamCount,
         itemsDicek: checkedItems.length,
         kondisiBaik: baikCount,
         kondisiRusak: rusakCount,
         hilang: hilangCount,
+        barangTersedia: barangTersediaCount,
+        barangDipinjam: barangDipinjamCount,
+        barangTersediaDicek: barangTersediaDicek,
+        barangDipinjamDicek: barangDipinjamDicek,
         checkedItems: checkedItems,
-        uncheckedItems: uncheckedItems.length > 0 ? uncheckedItems : null
+        uncheckedItems: uncheckedItems.length > 0 ? uncheckedItems : null,
+        barangPinjamInfo: barangPinjam // Tambahkan info barang dipinjam
       };
 
       // Generate HTML content
@@ -889,7 +1059,10 @@ export default function PengecekanPage() {
     let isMounted = true;
     const loadData = async () => {
       try {
-        await fetchBarangTersedia();
+        // Hanya fetch data baru jika tidak ada laporan yang sedang dibuka atau laporan masih draft
+        if (!reportId || status !== 'final') {
+          await fetchBarangTersedia();
+        }
         await fetchReports();
       } catch (error) {
         console.error("Error loading data:", error);
@@ -900,7 +1073,7 @@ export default function PengecekanPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [reportId, status]); // Tambahkan dependency untuk reportId dan status
 
   // Effect untuk handle perubahan kategori
   useEffect(() => {
@@ -1054,8 +1227,21 @@ export default function PengecekanPage() {
           <DialogTitle>
             Workspace Pengecekan: {selectedReport?.kode_report} (
             {status.toUpperCase()})
+            {status === 'final' && (
+              <Chip 
+                label="DATA FINAL - TIDAK DAPAT DIUBAH" 
+                color="warning" 
+                size="small" 
+                sx={{ ml: 2, fontWeight: 'bold' }}
+              />
+            )}
           </DialogTitle>
           <DialogContent>
+            {status === 'final' && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <strong>Laporan Final:</strong> Data ini menggunakan snapshot saat laporan dibuat dan tidak akan berubah meskipun ada penambahan barang baru di sistem.
+              </Alert>
+            )}
             {reportId && selectedReport && (
               <Box>
                 <Box sx={{ mb: 3 }}>
@@ -1077,7 +1263,40 @@ export default function PengecekanPage() {
                         {selectedReport.kode_report || "-"}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={4}></Grid>
+                    <Grid item xs={12}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        gap: 2, 
+                        flexWrap: 'wrap',
+                        mt: 1,
+                        p: 2,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1
+                      }}>
+                        <Chip 
+                          label={`Total Tersedia: ${barang.length} item`}
+                          color="primary" 
+                          size="small" 
+                        />
+                        <Chip 
+                          label={`Dipinjam: ${barangPinjam.length} item`}
+                          color="warning" 
+                          size="small" 
+                        />
+                        <Chip 
+                          label={`Sudah Dicek: ${barang.filter(item => item.checked).length}`}
+                          color="info" 
+                          size="small" 
+                        />
+                        <Chip 
+                          label={`Belum Dicek: ${barang.filter(item => !item.checked).length}`}
+                          color="error" 
+                          size="small" 
+                        />
+                      </Box>
+                    </Grid>
                   </Grid>
                 </Box>
 
@@ -1120,10 +1339,7 @@ export default function PengecekanPage() {
                     <InputLabel>Kategori</InputLabel>
                     <Select
                       value={selectedCategory}
-                      onChange={(e) => {
-                        setSelectedCategory(e.target.value);
-                        filterBarang(searchQuery, e.target.value);
-                      }}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
                       label="Kategori"
                     >
                       {CATEGORIES.map((category) => (
@@ -1164,11 +1380,11 @@ export default function PengecekanPage() {
                     <TableHead>
                       <TableRow>
                         <TableCell sx={{ width: "10%" }}>Gambar</TableCell>
-                        <TableCell sx={{ width: "15%" }}>Nama Barang</TableCell>
-                        <TableCell sx={{ width: "10%" }}>Kategori</TableCell>
-                        <TableCell sx={{ width: "10%" }}>Status</TableCell>
-                        <TableCell sx={{ width: "10%" }}>Kondisi</TableCell>
-                        <TableCell sx={{ width: "20%" }}>Keterangan</TableCell>
+                        <TableCell sx={{ width: "20%" }}>Nama Barang</TableCell>
+                        <TableCell sx={{ width: "15%" }}>Kategori</TableCell>
+                        <TableCell sx={{ width: "15%" }}>Status Cek</TableCell>
+                        <TableCell sx={{ width: "15%" }}>Kondisi</TableCell>
+                        <TableCell sx={{ width: "25%" }}>Keterangan</TableCell>
                         {status === "draft" && (
                           <TableCell sx={{ width: "20%" }}>Aksi</TableCell>
                         )}
@@ -1178,7 +1394,7 @@ export default function PengecekanPage() {
                       {loading ? (
                         <TableRow>
                           <TableCell
-                            colSpan={status === "draft" ? 6 : 5}
+                            colSpan={status === "draft" ? 7 : 6}
                             align="center"
                           >
                             <CircularProgress />
@@ -1187,7 +1403,7 @@ export default function PengecekanPage() {
                       ) : barang.length === 0 ? (
                         <TableRow>
                           <TableCell
-                            colSpan={status === "draft" ? 6 : 5}
+                            colSpan={status === "draft" ? 7 : 6}
                             align="center"
                           >
                             Tidak ada data barang.
@@ -1335,6 +1551,79 @@ export default function PengecekanPage() {
                     </TableBody>
                   </Table>
                 </TableContainer>
+
+                {/* Section untuk barang dipinjam */}
+                {barangPinjam.length > 0 && (
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" sx={{ mb: 2, color: '#f57c00', fontWeight: 'bold' }}>
+                      Informasi Barang Dipinjam
+                    </Typography>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      Barang yang sedang dipinjam tidak dilakukan pengecekan fisik karena berada di luar lokasi inventaris.
+                    </Alert>
+                    <TableContainer component={Paper}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow sx={{ backgroundColor: '#ff9800' }}>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Gambar</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nama Barang</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Peminjam</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tanggal Pinjam</TableCell>
+                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Rencana Kembali</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {barangPinjam.map((item, idx) => (
+                            <TableRow key={`pinjam-${idx}`} sx={{ backgroundColor: idx % 2 === 1 ? '#fff3e0' : 'white' }}>
+                              <TableCell>
+                                {item.Foto ? (
+                                  <Image
+                                    src={`${API_BASE_URL}${item.Foto}`}
+                                    alt={item.Namabarang}
+                                    width={40}
+                                    height={40}
+                                    style={{ objectFit: "cover", borderRadius: 4 }}
+                                  />
+                                ) : (
+                                  <Avatar variant="square" sx={{ width: 40, height: 40, bgcolor: 'grey.300' }}>
+                                    {item.Namabarang?.charAt(0) || '?'}
+                                  </Avatar>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {item.Namabarang}
+                                </Typography>
+                                <Chip 
+                                  label="Dipinjam" 
+                                  size="small" 
+                                  color="warning" 
+                                  variant="outlined"
+                                  sx={{ fontSize: '0.7rem', mt: 0.5 }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {item.peminjam}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {formatDateDisplay(item.tanggalPinjam)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {formatDateDisplay(item.rencanaKembali)}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
               </Box>
             )}
           </DialogContent>
