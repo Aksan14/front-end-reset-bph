@@ -125,7 +125,6 @@ export const saveReportSnapshot = async (reportId, snapshotData) => {
     
     return { success: true, message: "Snapshot saved successfully" };
   } catch (error) {
-    console.warn("Failed to save snapshot to backend, using localStorage only");
     return { success: false, message: "Failed to save snapshot" };
   }
 };
@@ -146,7 +145,6 @@ export const getReportSnapshot = async (reportId) => {
     
     return null;
   } catch (error) {
-    console.warn("Failed to get snapshot:", error);
     return null;
   }
 };

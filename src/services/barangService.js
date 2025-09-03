@@ -22,7 +22,6 @@ const getFetchOptions = (method, body = null, headers = {}) => {
 export const barangService = {
   getAll: async () => {
     try {
-      console.log("Fetching from:", endpoints.BARANG_GET_ALL);
       const response = await fetch(
         endpoints.BARANG_GET_ALL,
         getFetchOptions("GET")
@@ -41,7 +40,6 @@ export const barangService = {
 
   getById: async (id) => {
     try {
-      console.log("Fetching from:", endpoints.BARANG_GET_BY_ID(id));
       const response = await fetch(
         endpoints.BARANG_GET_BY_ID(id),
         getFetchOptions("GET")
@@ -68,7 +66,6 @@ export const barangService = {
       formData.append("Kondisi", data.Kondisi || "");
       if (file) formData.append("Foto", file);
 
-      console.log("Posting to:", endpoints.BARANG_ADD);
       const response = await fetch(
         endpoints.BARANG_ADD,
         getFetchOptions("POST", formData)
@@ -95,7 +92,6 @@ export const barangService = {
       formData.append("Kondisi", data.Kondisi || "");
       if (file) formData.append("Foto", file);
 
-      console.log("Putting to:", endpoints.BARANG_UPDATE(id));
       const response = await fetch(
         endpoints.BARANG_UPDATE(id),
         getFetchOptions("PUT", formData)
@@ -133,7 +129,6 @@ export const barangService = {
   search: async (keyword) => {
     try {
       const url = endpoints.BARANG_SEARCH(keyword);
-      console.log("Searching from:", url);
       const response = await fetch(url, getFetchOptions("GET"));
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const result = await response.json();

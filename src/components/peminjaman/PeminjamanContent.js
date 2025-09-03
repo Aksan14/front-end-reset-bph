@@ -230,11 +230,7 @@ export default function PeminjamanContent() {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  console.log("BarangList length:", barangList.length); 
-  console.log("Current page:", currentPage);
-  console.log("Items per page:", itemsPerPage);
   const currentItems = barangList.slice(indexOfFirstItem, indexOfLastItem);
-  console.log("Current items:", currentItems); 
   const totalPages = Math.ceil(barangList.length / itemsPerPage);
 
   const handleChange = (e) => {
@@ -274,18 +270,6 @@ export default function PeminjamanContent() {
         tanggal_pinjam: formatDateForAPI(formData.tanggal_pinjam),
         rencana_kembali: formatDateForAPI(formData.rencana_kembali),
       });
-      
-      // Reset form data setelah berhasil
-      setFormData({
-        barang_id: "",
-        nama_peminjam: "",
-        tanggal_pinjam: "",
-        rencana_kembali: "",
-        keterangan: "",
-      });
-      setSelectedBarang(null);
-      setError(""); // Clear any previous error messages
-      
       setOpenFormDialog(false);
       await Promise.all([
         fetchBarangTersedia(),
@@ -1025,7 +1009,7 @@ export default function PeminjamanContent() {
         open={openFormDialog}
         onClose={() => setOpenFormDialog(false)}
         fullScreen={isMobile}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
         PaperProps={{
           sx: {
@@ -1088,7 +1072,7 @@ export default function PeminjamanContent() {
           }}
         >
           {selectedBarang && (
-            <Box sx={{ p: { xs: 1, sm: 3 }, flex: 1 }}>
+            <Box sx={{ p: { xs: 1, sm: 2 }, flex: 1 }}>
               {isMobile ? (
                 <Stack spacing={2}>
                   <Paper
@@ -1270,27 +1254,23 @@ export default function PeminjamanContent() {
                   </Paper>
                 </Stack>
               ) : (
-                <Grid container spacing={3} alignItems="stretch">
-                  <Grid item xs={12} md={5}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2.5,
-                        height: "100%",
-                        borderRadius: 2,
-                        bgcolor: "rgba(255, 255, 255, 0.8)",
-                        border: "1px solid",
-                        borderColor: "divider",
-                        display: "flex",
-                        flexDirection: "column",
-                      }}
-                    >
+                <Stack spacing={2}>
+                  {/* Informasi Barang */}
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: "rgba(255, 255, 255, 0.8)",
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <Box
                         sx={{
-                          position: "relative",
-                          width: "100%",
-                          height: 380,
-                          mb: 2,
+                          width: 100,
+                          height: 100,
                           borderRadius: 2,
                           overflow: "hidden",
                           bgcolor: "background.neutral",
@@ -1299,6 +1279,7 @@ export default function PeminjamanContent() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
+                          flexShrink: 0,
                         }}
                       >
                         <Avatar
@@ -1313,94 +1294,67 @@ export default function PeminjamanContent() {
                             height: "100%",
                             "& img": {
                               objectFit: "contain",
-                              p: 3,
+                              p: 1,
                             },
                           }}
                         >
-                          <ImageIcon sx={{ fontSize: 96 }} />
+                          <ImageIcon sx={{ fontSize: 32 }} />
                         </Avatar>
                       </Box>
 
-                      <Stack spacing={1.5}>
-                        <Box>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                            gutterBottom
-                          >
-                            Nama Barang
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={600}
+                          gutterBottom
+                          sx={{ fontSize: "1.1rem" }}
+                        >
+                          {selectedBarang.Namabarang}
+                        </Typography>
+                        
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Typography variant="body2" color="text.secondary">
+                            Kategori: {selectedBarang.Kategori || "-"}
                           </Typography>
-                          <Typography variant="body1" fontWeight={500}>
-                            {selectedBarang.Namabarang}
-                          </Typography>
-                        </Box>
+                          <Chip
+                            label={selectedBarang.Kondisi}
+                            color={
+                              selectedBarang.Kondisi === "Baik"
+                                ? "success"
+                                : "warning"
+                            }
+                            size="small"
+                          />
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </Paper>
 
-                        <Grid container spacing={2}>
-                          <Grid item xs={6}>
-                            <Typography
-                              variant="subtitle2"
-                              color="text.secondary"
-                              gutterBottom
-                            >
-                              Kategori
-                            </Typography>
-                            <Typography variant="body2" fontWeight={500}>
-                              {selectedBarang.Kategori || "-"}
-                            </Typography>
-                          </Grid>
-
-                          <Grid item xs={6}>
-                            <Typography
-                              variant="subtitle2"
-                              color="text.secondary"
-                              gutterBottom
-                            >
-                              Kondisi
-                            </Typography>
-                            <Chip
-                              label={selectedBarang.Kondisi}
-                              color={
-                                selectedBarang.Kondisi === "Baik"
-                                  ? "success"
-                                  : "warning"
-                              }
-                              size="small"
-                            />
-                          </Grid>
-                        </Grid>
-                      </Stack>
-                    </Paper>
-                  </Grid>
-
-                  {/* Right Side - Form Section */}
-                  <Grid item xs={12} md={7}>
-                    <Paper
-                      elevation={0}
+                  {/* Form Section */}
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: "rgba(255, 255, 255, 0.8)",
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      gutterBottom
                       sx={{
-                        p: 2.5,
-                        height: "100%",
-                        borderRadius: 2,
-                        bgcolor: "rgba(255, 255, 255, 0.8)",
-                        border: "1px solid",
-                        borderColor: "divider",
-                        display: "flex",
-                        flexDirection: "column",
+                        fontWeight: 600,
+                        color: "text.primary",
+                        mb: 1.5,
+                        fontSize: "1.1rem",
                       }}
                     >
-                      <Typography
-                        variant="h6"
-                        gutterBottom
-                        sx={{
-                          fontWeight: 600,
-                          color: "text.primary",
-                          mb: 2,
-                          fontSize: "1.25rem",
-                        }}
-                      >
-                        Form Peminjaman
-                      </Typography>
+                      Form Peminjaman
+                    </Typography>
 
-                      <Stack spacing={2.5} sx={{ flex: 1 }}>
+                    <Stack spacing={2}>
                         <TextField
                           label="Nama Peminjam"
                           name="nama_peminjam"
@@ -1416,7 +1370,7 @@ export default function PeminjamanContent() {
                           }}
                         />
 
-                        <Stack direction="row" spacing={2}>
+                        <Stack direction="row" spacing={1.5}>
                           <TextField
                             label="Tanggal Pinjam"
                             name="tanggal_pinjam"
@@ -1458,7 +1412,7 @@ export default function PeminjamanContent() {
                           onChange={handleChange}
                           fullWidth
                           multiline
-                          rows={3}
+                          rows={2}
                           size="small"
                           sx={{
                             "& .MuiOutlinedInput-root": {
@@ -1468,8 +1422,7 @@ export default function PeminjamanContent() {
                         />
                       </Stack>
                     </Paper>
-                  </Grid>
-                </Grid>
+                  </Stack>
               )}
             </Box>
           )}

@@ -2,7 +2,6 @@ import { endpoints } from "@/config/api";
 
 export const getAllItems = async () => {
   try {
-    console.log("Fetching from:", endpoints.BARANG_GET_ALL); 
     const response = await fetch(endpoints.BARANG_GET_ALL, {
       method: "GET",
       headers: {

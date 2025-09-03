@@ -481,7 +481,6 @@ export default function PengecekanPage() {
     try {
       setLoading(true);
       const result = await barangService.search(searchQuery);
-      console.log("Search results:", result.data); // Log debug
       if (result.success) {
         const tersedia = result.data.filter(
           (item) => item.Kondisi !== "Dimusnahkan"
@@ -507,7 +506,6 @@ export default function PengecekanPage() {
     try {
       setLoading(true);
       const response = await getReports();
-      console.log("Fetched reports:", response.data); // Log debug
       setReports(response.data);
     } catch (err) {
       setError(err.message);
@@ -528,9 +526,8 @@ export default function PengecekanPage() {
           timestamp: new Date().toISOString(),
           petugas: petugas
         });
-        console.log("Snapshot data saved for report:", response.data.id);
       } catch (snapshotError) {
-        console.warn("Failed to save snapshot, proceeding without it:", snapshotError);
+        // Snapshot save failed, but continue without it
       }
       
       setReportId(response.data.id);
@@ -549,7 +546,6 @@ export default function PengecekanPage() {
     try {
       setLoading(true);
       const response = await getReportDetail(reportId);
-      console.log("Report detail response:", response.data); // Log debug
       setReportId(reportId);
       setSelectedReport(response.data.report);
       setStatus(response.data.report.status);
@@ -564,14 +560,11 @@ export default function PengecekanPage() {
             barangDataToUse = snapshotResponse.barangList;
             setBarangList(snapshotResponse.barangList);
             setOriginalBarangList(snapshotResponse.barangList);
-            console.log("Using snapshot data for final report:", snapshotResponse);
             setMessage("Menggunakan data snapshot untuk laporan final");
           } else {
-            console.warn("No snapshot found for final report, using current data");
             setMessage("Peringatan: Tidak ada snapshot data untuk laporan final");
           }
         } catch (snapshotError) {
-          console.warn("Failed to load snapshot data:", snapshotError);
           setMessage("Peringatan: Gagal memuat snapshot data, menggunakan data terkini");
         }
       }
@@ -585,7 +578,6 @@ export default function PengecekanPage() {
           checked: true,
         };
       });
-      console.log("Enriched checks:", enrichedChecks); // Log debug
       
       const allBarang = barangDataToUse.map((item) => {
         const check = enrichedChecks.find((c) => c.inventaris_id === item.id);
@@ -607,7 +599,6 @@ export default function PengecekanPage() {
         };
       });
       setBarang(allBarang);
-      console.log("Updated barang state:", allBarang); // Log debug
       setMessage(response.message || "Detail laporan dimuat");
       setSnackbarOpen(true);
       setOpenWorkspaceDialog(true); // Open the popup dialog
@@ -620,7 +611,6 @@ export default function PengecekanPage() {
   };
 
   const updateBarangTable = (newBarangList) => {
-    console.log("Updating barang table with:", newBarangList); // Log debug
     if (reportId && selectedReport) {
       const allBarang = newBarangList.map((item) => {
         const existing = barang.find((b) => b.inventaris_id === item.id);
@@ -637,7 +627,6 @@ export default function PengecekanPage() {
         };
       });
       setBarang(allBarang);
-      console.log("Updated barang table:", allBarang); // Log debug
     }
   };
 
