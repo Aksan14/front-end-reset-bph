@@ -195,6 +195,7 @@ const tableColumns = [
   { id: "jumlah", label: "Jumlah", mobile: true, minWidth: { xs: 70, sm: 80 } },
   { id: "satuan", label: "Satuan", mobile: false, minWidth: { xs: 80, sm: 100 } },
   { id: "kondisi", label: "Kondisi", mobile: true, minWidth: { xs: 100, sm: 120 } },
+  { id: "created_at", label: "Ditambahkan", mobile: false, minWidth: { xs: 120, sm: 140 } },
   { id: "aksi", label: "Aksi", mobile: true, minWidth: { xs: 120, sm: 160 } }
 ];
 
@@ -894,6 +895,7 @@ export default function DataBarang() {
                               </Avatar>
                             </TableCell>
                             <TableCell>
+                              {item.created_at ? new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : "-"}
                               <Stack spacing={0.5}>
                                 <Typography 
                                   fontWeight={500}
@@ -976,6 +978,9 @@ export default function DataBarang() {
                                 size="small"
                                 variant="outlined"
                               />
+                            </TableCell>
+                            <TableCell>
+                              {item.created_at ? new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : "-"}
                             </TableCell>
                             <TableCell>
                               <Stack 
@@ -1084,49 +1089,42 @@ export default function DataBarang() {
                     sx={{ 
                       p: 2,
                       cursor: 'pointer',
-                      '&:active': { bgcolor: 'action.selected' }
+                      '&:active': { bgcolor: 'action.selected' },
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      opacity: 0.6,
+                      bgcolor: theme => alpha(theme.palette.error.light, 0.08)
                     }}
                   >
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar
-                        src={item.Foto ? `${API_BASE_URL}${item.Foto}` : undefined}
-                        variant="rounded"
-                        sx={{
-                          width: 56,
-                          height: 56,
-                          bgcolor: item.Foto ? 'transparent' : '#e2e8f0',
-                          opacity: 0.7 // Add opacity for dimusnahkan items
+                    <Avatar
+                      src={item.Foto ? `${API_BASE_URL}${item.Foto}` : undefined}
+                      variant="rounded"
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: item.Foto ? 'transparent' : '#e2e8f0',
+                        opacity: 0.7
+                      }}
+                    >
+                      {!item.Foto && <ImageIcon />}
+                    </Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography 
+                        fontWeight={500}
+                        sx={{ 
+                          fontSize: '0.9rem',
+                          mb: 0.5,
+                          textDecoration: 'line-through',
+                          color: 'text.secondary'
                         }}
                       >
-                        {!item.Foto && <ImageIcon />}
-                      </Avatar>
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography 
-                          fontWeight={500}
-                          sx={{ 
-                            fontSize: '0.9rem',
-                            mb: 0.5,
-                            textDecoration: 'line-through', // Add strikethrough for dimusnahkan items
-                            color: 'text.secondary'
-                          }}
-                        >
-                          {item.Namabarang}
-                        </Typography>
-                        <Chip
-                          icon={getConditionIcon(item.Kondisi)}
-                          label={item.Kondisi}
-                          color={getConditionColor(item.Kondisi)}
-                          size="small"
-                          sx={{ 
-                            height: 24,
-                            '& .MuiChip-label': {
-                              px: 1,
-                              fontSize: '0.75rem'
-                            }
-                          }}
-                        />
-                      </Box>
-                    </Stack>
+                        {item.Namabarang}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {item.updated_at ? `Dimusnahkan: ${new Date(item.updated_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}` : ''}
+                      </Typography>
+                    </Box>
                   </Box>
                 ))}
               </Stack>
@@ -1136,17 +1134,13 @@ export default function DataBarang() {
                 <Table>
                   <TableHead>
                     <TableRow sx={{ bgcolor: alpha(customColors.primary.lighter, 0.5) }}>
-                      {tableColumns.slice(0, -1).map((column) => ( // Remove action column
-                        <TableCell
-                          key={column.id}
-                          sx={{
-                            ...tableHeaderCellStyles,
-                            minWidth: column.minWidth
-                          }}
-                        >
-                          {column.label}
-                        </TableCell>
-                      ))}
+                      <TableCell sx={{ p: 0, width: 56 }}></TableCell>
+                      <TableCell>Nama Barang</TableCell>
+                      <TableCell>Kategori</TableCell>
+                      <TableCell>Jumlah</TableCell>
+                      <TableCell>Satuan</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Dimusnahkan</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1154,44 +1148,31 @@ export default function DataBarang() {
                       <TableRow 
                         key={item.id} 
                         hover
-                        sx={{ 
-                          opacity: 0.8,
-                          bgcolor: alpha(customColors.error.lighter, 0.1)
+                        sx={{
+                          opacity: 0.6,
+                          bgcolor: theme => alpha(theme.palette.error.light, 0.08),
+                          '&:hover': {
+                            bgcolor: alpha(customColors.primary.lighter, 0.1)
+                          }
                         }}
                       >
-                        <TableCell>
+                        <TableCell sx={{ p: 1.5, width: 56 }}>
                           {item.Foto ? (
                             <Avatar
                               src={`${API_BASE_URL}${item.Foto}`}
                               alt={item.Namabarang}
-                              sx={{ 
-                                width: 56, 
-                                height: 56,
-                                cursor: "pointer",
-                                opacity: 0.7,
-                                '&:hover': {
-                                  opacity: 1,
-                                  transform: 'scale(1.05)',
-                                  transition: 'all 0.2s ease-in-out'
-                                }
-                              }}
-                              onClick={() => handleImageClick(`${API_BASE_URL}${item.Foto}`)}
+                              sx={{ width: 100, height: 100, cursor: 'pointer', bgcolor: 'transparent' }}
                               variant="rounded"
+                              onClick={() => handleImageClick(`${API_BASE_URL}${item.Foto}`)}
                             />
                           ) : (
-                            <Avatar
-                              sx={{ width: 56, height: 56, bgcolor: "#e2e8f0" }}
-                              variant="rounded"
-                            >
-                              <ImageIcon sx={{ color: "#94a3b8" }} />
+                            <Avatar sx={{ width: 56, height: 56, bgcolor: '#e2e8f0' }} variant="rounded">
+                              <ImageIcon sx={{ color: '#94a3b8' }} />
                             </Avatar>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Typography 
-                            fontWeight={500}
-                            sx={{ textDecoration: 'line-through' }}
-                          >
+                          <Typography fontWeight={500} sx={{ textDecoration: 'line-through' }}>
                             {item.Namabarang || "-"}
                           </Typography>
                         </TableCell>
@@ -1199,7 +1180,7 @@ export default function DataBarang() {
                           <Chip 
                             label={item.Kategori || "-"} 
                             size="small"
-                            sx={{ opacity: 0.7 }}
+                            sx={{ borderRadius: 1, bgcolor: 'background.neutral' }}
                           />
                         </TableCell>
                         <TableCell>
@@ -1207,15 +1188,24 @@ export default function DataBarang() {
                             {item.Jumlah || "-"}
                           </Typography>
                         </TableCell>
-                        <TableCell>{item.Satuan || "-"}</TableCell>
+                        <TableCell>
+                          <Typography fontWeight={500}>
+                            {item.Satuan || "-"}
+                          </Typography>
+                        </TableCell>
                         <TableCell>
                           <Chip
-                            icon={getConditionIcon(item.Kondisi)}
-                            label={item.Kondisi || "-"}
-                            color={getConditionColor(item.Kondisi)}
+                            label="Dimusnahkan"
+                            color="default"
                             size="small"
-                            variant="outlined"
+                            icon={<DangerousIcon fontSize="small" />}
+                            sx={{ fontWeight: 600, bgcolor: '#f3f4f6', color: '#374151', borderRadius: 1 }}
                           />
+                        </TableCell>
+                        <TableCell>
+                          <Typography fontWeight={500}>
+                            {item.updated_at ? new Date(item.updated_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : "-"}
+                          </Typography>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1397,6 +1387,11 @@ export default function DataBarang() {
                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
                       {selectedBarang.Namabarang}
                     </Typography>
+                    {selectedBarang.created_at && (
+                      <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                        Ditambahkan: {new Date(selectedBarang.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </Typography>
+                    )}
                   </Box>
 
                   <Box>

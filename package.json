@@ -1,5 +1,5 @@
 {
-  "name": "bendahara-coconut-ui",
+  "name": "inventaris-coconut-ui",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -13,7 +13,9 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.1",
     "@mui/x-data-grid": "^8.10.1",
+    "@mui/x-date-pickers": "^8.11.1",
     "axios": "^1.11.0",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.1",
