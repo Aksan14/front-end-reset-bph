@@ -54,15 +54,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import { jsPDF } from "jspdf";
-import { barangService } from "@/services/barangService";
 import {
   createPeminjaman,
   updatePengembalian,
   getPeminjaman,
   getBarangTersedia,
 } from "@/services/peminjamanService";
-import { API_BASE_URL, endpoints } from "@/config/api";
+import { API_BASE_URL} from "@/config/api";
 import Cookies from "js-cookie";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -120,6 +118,20 @@ export default function PeminjamanContent() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = isMobile ? 6 : isTablet ? 9 : 10;
+
+  // State untuk filter laporan
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [filteredPeminjaman, setFilteredPeminjaman] = useState([]);
+  const [selectedFilterPreset, setSelectedFilterPreset] = useState('semua');
+
+  // Preset filter options
+  const filterPresets = [
+    { value: 'semua', label: 'Semua Data', days: null },
+    { value: '24jam', label: '24 Jam Terakhir', days: 1 },
+    { value: '7hari', label: '7 Hari Terakhir', days: 7 },
+    { value: '1bulan', label: '1 Bulan Terakhir', days: 30 }
+  ];
 
   const handleMenuOpen = (event, peminjaman) => {
     setAnchorEl(event.currentTarget);
@@ -277,6 +289,7 @@ const fetchBarangTersedia = async () => {
 
         const peminjamanResult = await getPeminjaman();
         setPeminjamanList(peminjamanResult);
+        setFilteredPeminjaman(peminjamanResult);
       } catch (error) {
         console.error("Error loading data:", error);
         setError("Gagal memuat data");
@@ -285,6 +298,179 @@ const fetchBarangTersedia = async () => {
     };
     loadData();
   }, []);
+
+  // Filter peminjaman berdasarkan preset
+  const handlePresetFilter = (preset) => {
+    setSelectedFilterPreset(preset);
+    
+    if (preset === 'semua') {
+      setFilteredPeminjaman(peminjamanList);
+      return;
+    }
+    
+    const now = new Date();
+    const daysAgo = new Date();
+    
+    // Get the number of days for the preset
+    const presetData = filterPresets.find(p => p.value === preset);
+    if (!presetData || !presetData.days) return;
+    
+    daysAgo.setDate(now.getDate() - presetData.days);
+    daysAgo.setHours(0, 0, 0, 0); // Start of day
+    now.setHours(23, 59, 59, 999); // End of today
+    
+    const filtered = peminjamanList.filter((p) => {
+      const tglPinjam = new Date(p.tanggal_pinjam);
+      return tglPinjam >= daysAgo && tglPinjam <= now;
+    });
+    
+    setFilteredPeminjaman(filtered);
+  };
+
+  // Reset filter
+  const handleResetFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setSelectedFilterPreset('semua');
+    setFilteredPeminjaman(peminjamanList);
+  };
+
+  // Generate laporan print
+  const generateLaporanPrint = () => {
+    if (filteredPeminjaman.length === 0) {
+      setError("Tidak ada data untuk dicetak");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const rows = filteredPeminjaman.map((p, idx) => `
+      <tr style="border-bottom: 1px solid #ddd;">
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${p.nama_peminjam}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${p.nama_barang}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${p.jumlah || 1}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatDateDisplay(p.tanggal_pinjam)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatDateDisplay(p.rencana_kembali)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+          ${p.tanggal_kembali ? 
+            `<span style=\"color: green; font-weight: bold;\">${formatDateDisplay(p.tanggal_kembali)}</span>` : 
+            '<span style=\"color: red; font-weight: bold;\">Belum Dikembalikan</span>'
+          }
+        </td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${p.keterangan || '-'}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+          ${p.foto_bukti_kembali ? `<img src='${API_BASE_URL}${p.foto_bukti_kembali}' alt='Bukti' style='max-width:60px; max-height:60px; border-radius:6px; border:1px solid #ccc;' />` : '-'}
+        </td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${p.keterangan_kembali || '-'}</td>
+      </tr>
+    `).join("");
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan Peminjaman Inventaris</title>
+        <style>
+          @page { margin: 15mm; size: A4; }
+          body { font-family: 'Times New Roman', serif; font-size: 12px; color: #333; margin: 0; padding: 20px; background: #fff; }
+          .header-flex { display: flex; align-items: center; margin-bottom: 10px; }
+          .header-flex img { width: 60px; height: auto; margin-right: 15px; }
+          .header-center { text-align: center; flex: 1; }
+          .header-center .org { font-size: 10pt; font-weight: bold; margin-bottom: 0; }
+          .header-center .org2 { font-size: 10pt; font-weight: bold; margin-bottom: 6px; }
+          .header-center .alamat { font-size: 10pt; margin-bottom: 2px; }
+          .header-center .kontak { font-size: 10pt; margin-bottom: 0; }
+          hr { height:0;border:none;border-top:1px solid #000;margin:0; }
+          .hr-thick { height:0;border:none;border-top:3px solid #000;margin:2px 0; }
+          .judul-laporan { text-align: center; margin: 25px 0 0 0; }
+          .judul-laporan h2 { margin: 0; font-size: 12pt; font-weight: bold; text-transform: uppercase; }
+          .judul-laporan .sub { font-size: 12pt; margin-top: 8px; color: #666; font-weight: 500; }
+          .filter-info { margin: 20px 0; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #007bff; color: white; padding: 12px 8px; text-align: center; border: 1px solid #0056b3; font-weight: bold; }
+          td { border: 1px solid #ddd; padding: 8px; }
+          tr:nth-child(even) { background-color: #f8f9fa; }
+          .footer { margin-top: 50px; }
+          .signature { float: right; text-align: center; width: 200px; }
+          @media print { body { margin: 0; } .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="header-flex">
+          <img src="/images/coconut-logo.png" alt="COCONUT Logo" />
+          <div class="header-center">
+            <div class="org">COMPUTER CLUB ORIENTED NETWORK, UTILITY AND TECHNOLOGY</div>
+            <div class="org2">(COCONUT)</div>
+            <div class="alamat">Sekretariat: Jl. Monumen Emmy Saelan III No. 70 Karunrung, Kec. Rappocini, Makassar</div>
+            <div class="kontak">Telp. 085240791254/0895801262897, Website: <a href="https://www.coconut.or.id" style="color: #0000EE; text-decoration: underline;">www.coconut.or.id</a>, Email: hello@coconut.or.id</div>
+          </div>
+        </div>
+        <hr />
+        <div class="hr-thick"></div>
+        <hr />
+        <div class="judul-laporan">
+          <h2>LAPORAN PEMINJAMAN BARANG INVENTARIS</h2>
+        </div>
+        <div class="filter-info">
+          <strong>Periode Laporan:</strong> ${filterPresets.find(p => p.value === selectedFilterPreset)?.label || 'Semua Data'}<br>
+          <strong>Total Data:</strong> ${filteredPeminjaman.length} peminjaman<br>
+          <strong>Tanggal Cetak:</strong> ${new Date().toLocaleDateString('id-ID', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">No</th>
+              <th>Nama Peminjam</th>
+              <th>Nama Barang</th>
+              <th style="width: 9000px;">Jumlah</th>
+              <th style="width: 100px;">Tgl Pinjam</th>
+              <th style="width: 100px;">Rencana Kembali</th>
+              <th style="width: 120px;">Status/Tgl Kembali</th>
+              <th>Keterangan Pinjam</th>
+              <th>Bukti Pengembalian</th>
+              <th>Ket. Pengembalian</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div class="signature">
+            <p>Makassar, ${formatDateDisplay(new Date())}</p>
+            <p>Penanggung Jawab</p>
+            <br><br><br>
+            <p style="border-bottom: 1px solid #000; display: inline-block; min-width: 150px;"></p>
+          </div>
+          <div style="clear: both;"></div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printFrame = document.createElement("iframe");
+    printFrame.style.position = "absolute";
+    printFrame.style.left = "-9999px";
+    document.body.appendChild(printFrame);
+    
+    printFrame.contentDocument.write(html);
+    printFrame.contentDocument.close();
+    
+    setTimeout(() => {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+      setTimeout(() => {
+        document.body.removeChild(printFrame);
+      }, 1000);
+    }, 500);
+  };
 
   useEffect(() => {
     filterBarang(searchQuery, selectedCategory);
@@ -302,10 +488,13 @@ const fetchBarangTersedia = async () => {
   const handleSelectBarang = (barang) => {
     if ((barang.JumlahTersedia || 0) === 0) {
       setError("Barang ini sedang tidak tersedia untuk dipinjam");
+      setMessage("");
       setSnackbarOpen(true);
       return;
     }
-    
+    // Reset error/message saat buka form baru
+    setError("");
+    setMessage("");
     setFormData({
       ...formData,
       barang_id: barang.id,
@@ -321,7 +510,9 @@ const fetchBarangTersedia = async () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    // Reset error sebelum validasi baru
+    setError("");
+    setMessage("");
     if (
       !formData.nama_peminjam ||
       !formData.tanggal_pinjam ||
@@ -350,7 +541,9 @@ const fetchBarangTersedia = async () => {
         rencana_kembali: formatDateForAPI(formData.rencana_kembali),
       });
       setOpenFormDialog(false);
-      
+      // Reset error/message setelah submit sukses
+      setError("");
+      setMessage("");
       // Reset form
       setFormData({
         barang_id: "",
@@ -361,7 +554,6 @@ const fetchBarangTersedia = async () => {
         keterangan: "",
       });
       setSelectedBarang(null);
-      
       await Promise.all([
         fetchBarangTersedia(),
         getPeminjaman().then(setPeminjamanList),
@@ -377,6 +569,9 @@ const fetchBarangTersedia = async () => {
 
   // Updated handlePengembalian function using service
   const handlePengembalian = async () => {
+    // Reset error/message sebelum validasi
+    setError("");
+    setMessage("");
     if (
       !pengembalianData.foto_bukti_kembali ||
       !pengembalianData.keterangan_kembali
@@ -388,7 +583,6 @@ const fetchBarangTersedia = async () => {
 
     try {
       setUploadLoading(true);
-      
       // Use the service function
       await updatePengembalian(selectedPeminjaman.id, {
         tgl_kembali: formatDateForAPI(pengembalianData.tgl_kembali),
@@ -398,7 +592,9 @@ const fetchBarangTersedia = async () => {
       });
 
       setOpenReturnDialog(false);
-      
+      // Reset error/message setelah submit sukses
+      setError("");
+      setMessage("");
       // Reset form
       setPengembalianData({
         tgl_kembali: "",
@@ -407,13 +603,11 @@ const fetchBarangTersedia = async () => {
         keterangan_kembali: "",
       });
       setFotoPreview(null);
-      
       await Promise.all([
         fetchBarangTersedia(),
         getPeminjaman().then(setPeminjamanList),
       ]);
-      
-      setMessage(pengembalianData.foto_bukti_kembali ? "Pengembalian berhasil" : "Pengembalian berhasil");
+      setMessage("Pengembalian berhasil");
       setSnackbarOpen(true);
     } catch (error) {
       console.error("Error:", error);
@@ -427,6 +621,9 @@ const fetchBarangTersedia = async () => {
   // Reset return dialog when opening
   const handleOpenReturnDialog = (peminjaman) => {
     setSelectedPeminjaman(peminjaman);
+    // Reset error/message saat buka dialog pengembalian
+    setError("");
+    setMessage("");
     setPengembalianData({
       tgl_kembali: new Date().toISOString().split("T")[0],
       kondisi_setelah: "Baik",
@@ -1180,10 +1377,91 @@ const fetchBarangTersedia = async () => {
             overflow: "hidden",
           }}
         >
-          <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+          <Box 
+            sx={{ 
+              p: 2, 
+              borderBottom: "1px solid", 
+              borderColor: "divider",
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: 2,
+              alignItems: isMobile ? 'stretch' : 'center',
+              justifyContent: 'space-between'
+            }}
+          >
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Riwayat Peminjaman
             </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<PrintIcon />}
+              onClick={generateLaporanPrint}
+              size={isMobile ? "medium" : "small"}
+            >
+              Cetak Laporan
+            </Button>
+          </Box>
+
+          {/* Filter Section */}
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              mb: 2,
+              p: 2,
+              backgroundColor: '#f5f5f5',
+              borderRadius: 1,
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              flexWrap: 'wrap'
+            }}
+          >
+            <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: '200px' } }}>
+              <InputLabel>Filter Periode</InputLabel>
+              <Select
+                value={selectedFilterPreset}
+                onChange={(e) => {
+                  setSelectedFilterPreset(e.target.value);
+                  handlePresetFilter(e.target.value);
+                }}
+                label="Filter Periode"
+              >
+                {filterPresets.map((preset) => (
+                  <MenuItem key={preset.value} value={preset.value}>
+                    {preset.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 1, 
+              alignItems: 'center',
+              flex: 1
+            }}>
+              <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
+                Menampilkan: {filteredPeminjaman.length} dari {peminjamanList.length} data
+              </Typography>
+            </Box>
+            
+            <Button
+              variant="outlined"
+              onClick={handleResetFilter}
+              size="small"
+              sx={{ 
+                borderColor: '#2E7D32',
+                color: '#2E7D32',
+                '&:hover': {
+                  backgroundColor: '#E8F5E8',
+                  borderColor: '#2E7D32'
+                },
+                minWidth: { xs: '100%', sm: '100px' }
+              }}
+            >
+              Reset Filter
+            </Button>
           </Box>
 
           <TableContainer
@@ -1210,14 +1488,14 @@ const fetchBarangTersedia = async () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {peminjamanList.length === 0 ? (
+                {filteredPeminjaman.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
                       Tidak ada data peminjaman
                     </TableCell>
                   </TableRow>
                 ) : (
-                  peminjamanList.map((p) => (
+                  filteredPeminjaman.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>
                         <Typography variant="body2" fontWeight={500}>

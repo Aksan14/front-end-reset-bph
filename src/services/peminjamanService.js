@@ -15,6 +15,7 @@ export const getBarangTersedia = async () => {
       throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText || "Unknown error"}`);
     }
     const result = await response.json();
+    console.log("Barang Tersedia API Response:", result); // Debug log
     if (result.code === 200 && result.status === "OK") {
       return result.data.map((item) => ({
         id: item.id,
@@ -23,7 +24,7 @@ export const getBarangTersedia = async () => {
         satuan: item.satuan,
         kondisi: item.kondisi,
         jumlah: item.jumlah || 0,
-        jumlah_tersedia: item.jumlah || 0, // Gunakan jumlah dari API sebagai jumlah tersedia
+        jumlah_tersedia: item.jumlah || 0,
         foto: item.foto 
       }));
     } else {
