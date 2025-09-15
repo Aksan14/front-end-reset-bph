@@ -541,10 +541,8 @@ const fetchBarangTersedia = async () => {
         rencana_kembali: formatDateForAPI(formData.rencana_kembali),
       });
       setOpenFormDialog(false);
-      // Reset error/message setelah submit sukses
       setError("");
       setMessage("");
-      // Reset form
       setFormData({
         barang_id: "",
         nama_peminjam: "",
@@ -554,10 +552,13 @@ const fetchBarangTersedia = async () => {
         keterangan: "",
       });
       setSelectedBarang(null);
-      await Promise.all([
+      // Ambil data terbaru dan update dua state sekaligus
+      const [barangBaru, peminjamanBaru] = await Promise.all([
         fetchBarangTersedia(),
-        getPeminjaman().then(setPeminjamanList),
+        getPeminjaman()
       ]);
+      setPeminjamanList(peminjamanBaru);
+      setFilteredPeminjaman(peminjamanBaru);
       setMessage("Peminjaman berhasil");
       setSnackbarOpen(true);
     } catch (error) {
@@ -583,7 +584,6 @@ const fetchBarangTersedia = async () => {
 
     try {
       setUploadLoading(true);
-      // Use the service function
       await updatePengembalian(selectedPeminjaman.id, {
         tgl_kembali: formatDateForAPI(pengembalianData.tgl_kembali),
         kondisi_setelah: pengembalianData.kondisi_setelah,
@@ -592,10 +592,8 @@ const fetchBarangTersedia = async () => {
       });
 
       setOpenReturnDialog(false);
-      // Reset error/message setelah submit sukses
       setError("");
       setMessage("");
-      // Reset form
       setPengembalianData({
         tgl_kembali: "",
         kondisi_setelah: "Baik",
@@ -603,10 +601,13 @@ const fetchBarangTersedia = async () => {
         keterangan_kembali: "",
       });
       setFotoPreview(null);
-      await Promise.all([
+      // Ambil data terbaru dan update dua state sekaligus
+      const [barangBaru, peminjamanBaru] = await Promise.all([
         fetchBarangTersedia(),
-        getPeminjaman().then(setPeminjamanList),
+        getPeminjaman()
       ]);
+      setPeminjamanList(peminjamanBaru);
+      setFilteredPeminjaman(peminjamanBaru);
       setMessage("Pengembalian berhasil");
       setSnackbarOpen(true);
     } catch (error) {
